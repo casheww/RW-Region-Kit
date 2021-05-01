@@ -118,7 +118,7 @@ namespace RegionKit {
             }
 
             // circuit components
-            else if (self.type == EnumExt_Objects.ImpactButton
+            else if (self.type == EnumExt_Objects.ImpactButton ||
                 self.type == EnumExt_Objects.CircuitSwitch)
             {
                 self.data = new Circuits.InputComponentData(self);
