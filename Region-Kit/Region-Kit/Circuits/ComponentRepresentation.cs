@@ -21,6 +21,9 @@ namespace RegionKit.Circuits
                     case "BasicCircuitLight":
                         component = new BasicLight(pObj, owner.room);
                         break;
+                    case "CircuitSwitch":
+                        component = new Switch(pObj, owner.room);
+                        break;
                 }
                 owner.room.AddObject(component);
             }
