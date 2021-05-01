@@ -5,7 +5,11 @@ using RWCustom;
 namespace RegionKit {
 
     public static class EnumExt_Objects {
+        // PW light rod
         public static PlacedObject.Type PWLightrod;
+
+        // circuit components
+        public static PlacedObject.Type ImpactButton;
     }
 
     class RoomLoader {
@@ -22,8 +26,9 @@ namespace RegionKit {
         }
 
         public static void ObjectsPage_CreateObjRep(On.DevInterface.ObjectsPage.orig_CreateObjRep orig, ObjectsPage self, PlacedObject.Type tp, PlacedObject pObj) {
+            bool isNewObject = false;
+
             if (tp == EnumExt_Objects.PWLightrod) {
-                bool isNewObject = false;
                 if (pObj == null) {
                     isNewObject = true;
                     pObj = new PlacedObject(tp, null) {
@@ -35,15 +40,45 @@ namespace RegionKit {
                 PlacedObjectRepresentation rep = new PWLightRodRepresentation(self.owner, tp.ToString() + "_Rep", self, pObj, tp.ToString(), isNewObject);
                 self.tempNodes.Add(rep);
                 self.subNodes.Add(rep);
-            } else {
+            }
+
+            else if (tp == EnumExt_Objects.ImpactButton)
+            {
+                if (pObj == null)
+                {
+                    isNewObject = true;
+                    pObj = new PlacedObject(tp, null)
+                    {
+                        pos = self.owner.room.game.cameras[0].pos +
+                            Vector2.Lerp(self.owner.mousePos, new Vector2(-683f, 384f), 0.25f) +
+                            Custom.DegToVec(Random.value * 360f) * 0.2f
+                    };
+                    self.RoomSettings.placedObjects.Add(pObj);
+                    self.owner.room.AddObject(new Circuits.ImpactButton(pObj, self.owner.room));
+                }
+                PlacedObjectRepresentation rep = new Circuits.ComponentRepresentation(
+                    self.owner, tp.ToString() + "_Rep", self, pObj, tp.ToString(), isNewObject);
+                self.tempNodes.Add(rep);
+                self.subNodes.Add(rep);
+            }
+
+            else {
                 orig(self, tp, pObj);
             }
         }
 
         private static void PlacedObject_GenerateEmptyData(On.PlacedObject.orig_GenerateEmptyData orig, PlacedObject self) {
             orig(self);
-            if (self.type == EnumExt_Objects.PWLightrod) {
+            // PW light rod
+            if (self.type == EnumExt_Objects.PWLightrod)
+            {
                 self.data = new PWLightRodData(self);
+            }
+
+            // circuit components
+            else if (self.type == EnumExt_Objects.ImpactButton
+            {
+                self.data = new Circuits.InputComponentData(self);
             }
         }
 
@@ -54,12 +89,37 @@ namespace RegionKit {
             //Load Objects
             for (int l = 0; l < self.roomSettings.placedObjects.Count; ++l) {
                 var obj = self.roomSettings.placedObjects[l];
-                if (obj.active) {
-                    if (obj.type == EnumExt_Objects.PWLightrod) {
+                if (obj.active)
+                {
+                    // PW light rod
+                    if (obj.type == EnumExt_Objects.PWLightrod)
+                    {
                         self.AddObject(new PWLightRod(obj, self));
+                    }
+
+                    // Circuit components - they also require additional setup
+                    else if (obj.data is Circuits.BaseComponentData componentData)
+                    {
+                        Circuits.BaseComponent component = null;
+
+                        if (obj.type == EnumExt_Objects.ImpactButton)
+                        {
+                            component = new Circuits.ImpactButton(obj, self);
+                        }
+
+                        self.AddObject(component);
+
+                        // ... aforementioned additional setup
+                        if (component != null)
+                        {
+                            Circuits.CircuitController.Instance
+                                .AddComponent(componentData.circuitNumber, component);
+                        }
                     }
                 }
             }
         }
+
+
     }
 }
