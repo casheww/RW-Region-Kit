@@ -18,6 +18,9 @@ namespace RegionKit.Circuits
                     case "ImpactButton":
                         component = new ImpactButton(pObj, owner.room);
                         break;
+                    case "BasicCircuitLight":
+                        component = new BasicLight(pObj, owner.room);
+                        break;
                 }
                 owner.room.AddObject(component);
             }
@@ -35,6 +38,15 @@ namespace RegionKit.Circuits
                 subNodes.Add(new CircuitIntegerControl(
                     owner, "Circuit_Number", this, new Vector2(5, 5), "Circuit: ", pObj));
 
+                if (pObj.data is ColorComponentData)
+                {
+                    size = new Vector2(250, 120);
+                    subNodes.Add(new ComponentSlider(owner, "Flicker_Slider", this, new Vector2(5, 105), "Flicker: "));
+                    subNodes.Add(new ComponentSlider(owner, "Strength_Slider", this, new Vector2(5, 85), "Strength: "));
+                    subNodes.Add(new ComponentSlider(owner, "ColorR_Slider", this, new Vector2(5, 65), "Color R: "));
+                    subNodes.Add(new ComponentSlider(owner, "ColorG_Slider", this, new Vector2(5, 45), "Color G: "));
+                    subNodes.Add(new ComponentSlider(owner, "ColorB_Slider", this, new Vector2(5, 25), "Color B: "));
+                }
             }
         }
 

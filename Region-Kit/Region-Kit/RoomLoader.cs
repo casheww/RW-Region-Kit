@@ -10,6 +10,7 @@ namespace RegionKit {
 
         // circuit components
         public static PlacedObject.Type ImpactButton;
+        public static PlacedObject.Type BasicCircuitLight;
     }
 
     class RoomLoader {
@@ -62,6 +63,25 @@ namespace RegionKit {
                 self.subNodes.Add(rep);
             }
 
+            else if (tp == EnumExt_Objects.BasicCircuitLight)
+            {
+                if (pObj == null)
+                {
+                    isNewObject = true;
+                    pObj = new PlacedObject(tp, null)
+                    {
+                        pos = self.owner.room.game.cameras[0].pos +
+                            Vector2.Lerp(self.owner.mousePos, new Vector2(-683f, 384f), 0.25f) +
+                            Custom.DegToVec(Random.value * 360f) * 0.2f
+                    };
+                    self.RoomSettings.placedObjects.Add(pObj);
+                    self.owner.room.AddObject(new Circuits.BasicLight(pObj, self.owner.room));
+                }
+                PlacedObjectRepresentation rep = new Circuits.ComponentRepresentation(
+                    self.owner, tp.ToString() + "_Rep", self, pObj, tp.ToString(), isNewObject);
+                self.tempNodes.Add(rep);
+                self.subNodes.Add(rep);
+            }
             else {
                 orig(self, tp, pObj);
             }
@@ -79,6 +99,10 @@ namespace RegionKit {
             else if (self.type == EnumExt_Objects.ImpactButton
             {
                 self.data = new Circuits.InputComponentData(self);
+            }
+            else if (self.type == EnumExt_Objects.BasicCircuitLight)
+            {
+                self.data = new Circuits.ColorComponentData(self);
             }
         }
 
@@ -105,6 +129,10 @@ namespace RegionKit {
                         if (obj.type == EnumExt_Objects.ImpactButton)
                         {
                             component = new Circuits.ImpactButton(obj, self);
+                        }
+                        else if (obj.type == EnumExt_Objects.BasicCircuitLight)
+                        {
+                            component = new Circuits.BasicLight(obj, self);
                         }
 
                         self.AddObject(component);
