@@ -60,6 +60,10 @@ namespace RegionKit {
 
                 if (tp == EnumExt_Objects.ImpactButton)
                 {
+                    if (pObj == null)
+                    {
+                        component = new Circuits.ImpactButton(pObj, self.owner.room);
+                    }
                     PlacedObjectRepresentation rep = new Circuits.ComponentRepresentation(
                         self.owner, tp.ToString() + "_Rep", self, pObj, tp.ToString(), isNewObject);
                     self.tempNodes.Add(rep);
@@ -67,6 +71,10 @@ namespace RegionKit {
                 }
                 else if (tp == EnumExt_Objects.BasicCircuitLight)
                 {
+                    if (pObj == null)
+                    {
+                        component = new Circuits.BasicLight(pObj, self.owner.room);
+                    }
                     PlacedObjectRepresentation rep = new Circuits.ComponentRepresentation(
                         self.owner, tp.ToString() + "_Rep", self, pObj, tp.ToString(), isNewObject);
                     self.tempNodes.Add(rep);
@@ -74,15 +82,19 @@ namespace RegionKit {
                 }
                 else if (tp == EnumExt_Objects.CircuitSwitch)
                 {
+                    if (pObj == null)
+                    {
+                        component = new Circuits.Switch(pObj, self.owner.room);
+                    }
                     PlacedObjectRepresentation rep = new Circuits.ComponentRepresentation(
                         self.owner, tp.ToString() + "_Rep", self, pObj, tp.ToString(), isNewObject);
                     self.tempNodes.Add(rep);
                     self.subNodes.Add(rep);
                 }
 
-                self.owner.room.AddObject(component);
                 if (component != null)
                 {
+                    self.owner.room.AddObject(component);
                     Circuits.CircuitController.Instance
                         .AddComponent(componentData.circuitNumber, component);
                 }
