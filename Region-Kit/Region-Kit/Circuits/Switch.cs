@@ -17,7 +17,7 @@ namespace RegionKit.Circuits
         public override void Update(bool eu)
         {
             base.Update(eu);
-
+            
             InputComponentData data = pObj.data as InputComponentData;
 
             foreach (AbstractCreature aCreature in room.game.Players)
@@ -27,7 +27,7 @@ namespace RegionKit.Circuits
                     Custom.MakeWorldCoordinate(coordInRoom, room.abstractRoom.index),
                     aCreature.pos);
 
-                if (Input.GetKey(KeyCode.D) && dist < activationRadius)
+                if (Input.GetKeyDown(KeyCode.D) && dist < activationRadius)
                 {
                     data.activated = !data.activated;
                     Debug.Log($"switched {(data.activated ? "on" : "off")} circuit {data.circuitNumber}");
