@@ -44,67 +44,52 @@ namespace RegionKit {
                 self.subNodes.Add(rep);
             }
 
-            else if (tp == EnumExt_Objects.ImpactButton)
+            else if (pObj.data is Circuits.BaseComponentData componentData)
             {
+                Circuits.BaseComponent component = null;
+
                 if (pObj == null)
                 {
                     isNewObject = true;
-                    pObj = new PlacedObject(tp, null)
-                    {
-                        pos = self.owner.room.game.cameras[0].pos +
-                            Vector2.Lerp(self.owner.mousePos, new Vector2(-683f, 384f), 0.25f) +
-                            Custom.DegToVec(Random.value * 360f) * 0.2f
-                    };
+                    pObj = new PlacedObject(tp, null);
                     self.RoomSettings.placedObjects.Add(pObj);
-                    self.owner.room.AddObject(new Circuits.ImpactButton(pObj, self.owner.room));
+                    pObj.pos = self.owner.room.game.cameras[0].pos +
+                        Vector2.Lerp(self.owner.mousePos, new Vector2(-683f, 384f), 0.25f) +
+                        Custom.DegToVec(Random.value * 360f) * 0.2f;
                 }
-                PlacedObjectRepresentation rep = new Circuits.ComponentRepresentation(
-                    self.owner, tp.ToString() + "_Rep", self, pObj, tp.ToString(), isNewObject);
-                self.tempNodes.Add(rep);
-                self.subNodes.Add(rep);
-            }
 
-            else if (tp == EnumExt_Objects.BasicCircuitLight)
-            {
-                if (pObj == null)
+                if (tp == EnumExt_Objects.ImpactButton)
                 {
-                    isNewObject = true;
-                    pObj = new PlacedObject(tp, null)
-                    {
-                        pos = self.owner.room.game.cameras[0].pos +
-                            Vector2.Lerp(self.owner.mousePos, new Vector2(-683f, 384f), 0.25f) +
-                            Custom.DegToVec(Random.value * 360f) * 0.2f
-                    };
-                    self.RoomSettings.placedObjects.Add(pObj);
-                    self.owner.room.AddObject(new Circuits.BasicLight(pObj, self.owner.room));
+                    PlacedObjectRepresentation rep = new Circuits.ComponentRepresentation(
+                        self.owner, tp.ToString() + "_Rep", self, pObj, tp.ToString(), isNewObject);
+                    self.tempNodes.Add(rep);
+                    self.subNodes.Add(rep);
                 }
-                PlacedObjectRepresentation rep = new Circuits.ComponentRepresentation(
-                    self.owner, tp.ToString() + "_Rep", self, pObj, tp.ToString(), isNewObject);
-                self.tempNodes.Add(rep);
-                self.subNodes.Add(rep);
-            }
-
-            else if (tp == EnumExt_Objects.CircuitSwitch)
-            {
-                if (pObj == null)
+                else if (tp == EnumExt_Objects.BasicCircuitLight)
                 {
-                    isNewObject = true;
-                    pObj = new PlacedObject(tp, null)
-                    {
-                        pos = self.owner.room.game.cameras[0].pos +
-                            Vector2.Lerp(self.owner.mousePos, new Vector2(-683f, 384f), 0.25f) +
-                            Custom.DegToVec(Random.value * 360f) * 0.2f
-                    };
-                    self.RoomSettings.placedObjects.Add(pObj);
-                    self.owner.room.AddObject(new Circuits.Switch(pObj, self.owner.room));
+                    PlacedObjectRepresentation rep = new Circuits.ComponentRepresentation(
+                        self.owner, tp.ToString() + "_Rep", self, pObj, tp.ToString(), isNewObject);
+                    self.tempNodes.Add(rep);
+                    self.subNodes.Add(rep);
                 }
-                PlacedObjectRepresentation rep = new Circuits.ComponentRepresentation(
-                    self.owner, tp.ToString() + "_Rep", self, pObj, tp.ToString(), isNewObject);
-                self.tempNodes.Add(rep);
-                self.subNodes.Add(rep);
+                else if (tp == EnumExt_Objects.CircuitSwitch)
+                {
+                    PlacedObjectRepresentation rep = new Circuits.ComponentRepresentation(
+                        self.owner, tp.ToString() + "_Rep", self, pObj, tp.ToString(), isNewObject);
+                    self.tempNodes.Add(rep);
+                    self.subNodes.Add(rep);
+                }
+
+                self.owner.room.AddObject(component);
+                if (component != null)
+                {
+                    Circuits.CircuitController.Instance
+                        .AddComponent(componentData.circuitNumber, component);
+                }
             }
 
-            else {
+            else
+            {
                 orig(self, tp, pObj);
             }
         }

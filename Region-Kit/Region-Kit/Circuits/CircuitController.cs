@@ -9,13 +9,12 @@ namespace RegionKit.Circuits
 
         public const int minCircuit = 0;
         public const int maxCircuit = 31;
-        Dictionary<int, Circuit> circuits;
+        Dictionary<int, Circuit> circuits = new Dictionary<int, Circuit>();
 
         public void Start()
         {
             Instance = this;
-
-            circuits = new Dictionary<int, Circuit>();
+            
             for (int i = minCircuit; i <= maxCircuit; i++)
             {
                 circuits[i] = new Circuit(i);
@@ -78,7 +77,8 @@ namespace RegionKit.Circuits
 
                 foreach (BaseComponent c in inputComponents)
                 {
-                    if ((c.pObj.data as InputComponentData).activated)
+                    InputComponentData data = (c.pObj.data as InputComponentData);
+                    if (data != null && data.activated)
                     {
                         hasPower = true;
                         break;
