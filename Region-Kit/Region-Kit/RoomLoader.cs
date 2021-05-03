@@ -27,8 +27,10 @@ namespace RegionKit {
             On.DevInterface.ObjectsPage.CreateObjRep -= ObjectsPage_CreateObjRep;
         }
 
-        public static void ObjectsPage_CreateObjRep(On.DevInterface.ObjectsPage.orig_CreateObjRep orig, ObjectsPage self, PlacedObject.Type tp, PlacedObject pObj) {
+        public static void ObjectsPage_CreateObjRep(On.DevInterface.ObjectsPage.orig_CreateObjRep orig, ObjectsPage self, PlacedObject.Type tp, PlacedObject pObj)
+        {
             bool isNewObject = false;
+            PlacedObjectRepresentation rep = null;
 
             if (tp == EnumExt_Objects.PWLightrod) {
                 if (pObj == null) {
@@ -39,7 +41,7 @@ namespace RegionKit {
                     self.RoomSettings.placedObjects.Add(pObj);
                     self.owner.room.AddObject(new PWLightRod(pObj, self.owner.room));
                 }
-                PlacedObjectRepresentation rep = new PWLightRodRepresentation(self.owner, tp.ToString() + "_Rep", self, pObj, tp.ToString(), isNewObject);
+                rep = new PWLightRodRepresentation(self.owner, tp.ToString() + "_Rep", self, pObj, tp.ToString(), isNewObject);
                 self.tempNodes.Add(rep);
                 self.subNodes.Add(rep);
             }
@@ -64,10 +66,8 @@ namespace RegionKit {
                     {
                         component = new Circuits.ImpactButton(pObj, self.owner.room);
                     }
-                    PlacedObjectRepresentation rep = new Circuits.ComponentRepresentation(
+                    rep = new Circuits.ComponentRepresentation(
                         self.owner, tp.ToString() + "_Rep", self, pObj, tp.ToString(), isNewObject);
-                    self.tempNodes.Add(rep);
-                    self.subNodes.Add(rep);
                 }
                 else if (tp == EnumExt_Objects.BasicCircuitLight)
                 {
@@ -75,10 +75,8 @@ namespace RegionKit {
                     {
                         component = new Circuits.BasicLight(pObj, self.owner.room);
                     }
-                    PlacedObjectRepresentation rep = new Circuits.ComponentRepresentation(
+                    rep = new Circuits.ComponentRepresentation(
                         self.owner, tp.ToString() + "_Rep", self, pObj, tp.ToString(), isNewObject);
-                    self.tempNodes.Add(rep);
-                    self.subNodes.Add(rep);
                 }
                 else if (tp == EnumExt_Objects.CircuitSwitch)
                 {
@@ -86,10 +84,8 @@ namespace RegionKit {
                     {
                         component = new Circuits.Switch(pObj, self.owner.room);
                     }
-                    PlacedObjectRepresentation rep = new Circuits.ComponentRepresentation(
+                    rep = new Circuits.ComponentRepresentation(
                         self.owner, tp.ToString() + "_Rep", self, pObj, tp.ToString(), isNewObject);
-                    self.tempNodes.Add(rep);
-                    self.subNodes.Add(rep);
                 }
 
                 if (component != null)
@@ -104,6 +100,13 @@ namespace RegionKit {
             {
                 orig(self, tp, pObj);
             }
+
+            if (rep != null)
+            {
+                self.tempNodes.Add(rep);
+                self.subNodes.Add(rep);
+            }
+
         }
 
         private static void PlacedObject_GenerateEmptyData(On.PlacedObject.orig_GenerateEmptyData orig, PlacedObject self) {
