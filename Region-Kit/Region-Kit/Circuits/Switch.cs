@@ -30,7 +30,7 @@ namespace RegionKit.Circuits
                 if (Input.GetKeyDown(KeyCode.D) && dist < activationRadius)
                 {
                     data.activated = !data.activated;
-                    Debug.Log($"switched {(data.activated ? "on" : "off")} circuit {data.circuitNumber}");
+                    Debug.Log($"switched {(data.activated ? "on" : "off")} circuit {data.CircuitID}");
                 }
             }
         }

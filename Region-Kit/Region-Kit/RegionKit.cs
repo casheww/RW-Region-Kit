@@ -14,23 +14,31 @@ namespace RegionKit {
             Version = modVersion;
         }
 
-        public override void OnEnable() {
+        public override void OnEnable()
+        {
             base.OnEnable();
+
+            // create circuit controller
+            circuitController = circuitControllerGameObj.AddComponent<Circuits.CircuitController>();
+
             RoomLoader.Patch();
             BrokenPatch.Patch();
             CustomArenaDivisions.Patch();
+            CustomDevInterface.StringControl.Setup();
             //Add new things here - remember to add them to OnDisable() as well!
-
-            circuitController.AddComponent<Circuits.CircuitController>();
         }
 
-        public override void OnDisable() {
+        public override void OnDisable()
+        {
             base.OnDisable();
+
+            // destory the circuit controller object
+            Object.Destroy(circuitControllerGameObj.GetComponent<Circuits.CircuitController>());
+
             RoomLoader.Disable();
             BrokenPatch.Disable();
+            CustomDevInterface.StringControl.Disable();
             //Add new things here- remember to add them to OnEnable() as well!
-
-            Object.Destroy(circuitController.GetComponent<Circuits.CircuitController>());
         }
 
         // Code for AutoUpdate support --------------------
@@ -44,7 +52,8 @@ namespace RegionKit {
         // ------------------------------------------------
 
         // circuit controller management
-        GameObject circuitController = new GameObject("CircuitController");
+        GameObject circuitControllerGameObj = new GameObject("CircuitController");
+        Circuits.CircuitController circuitController;
 
     }
 }

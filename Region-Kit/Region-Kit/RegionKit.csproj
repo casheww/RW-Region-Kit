@@ -42,6 +42,7 @@
     <Compile Include="Circuits\InputComponentData.cs" />
     <Compile Include="Circuits\Switch.cs" />
     <Compile Include="CustomArenaDivisions.cs" />
+    <Compile Include="CustomDevInterface\StringControl.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PWLightRod.cs" />
     <Compile Include="RegionKit.cs" />
@@ -83,4 +84,7 @@
     </Reference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>copy /Y $(TargetPath) "D:\Games\Steam\steamapps\common\Rain World\Mods"</PostBuildEvent>
+  </PropertyGroup>
 </Project>

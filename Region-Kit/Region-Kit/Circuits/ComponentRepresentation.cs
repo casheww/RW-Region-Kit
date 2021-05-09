@@ -1,45 +1,26 @@
-﻿using UnityEngine;
+﻿using DevInterface;
+using UnityEngine;
 
 namespace RegionKit.Circuits
 {
-    class ComponentRepresentation : DevInterface.PlacedObjectRepresentation
+    class ComponentRepresentation : PlacedObjectRepresentation
     {
-        public ComponentRepresentation(DevInterface.DevUI owner, string IDstring,
-                DevInterface.DevUINode parentNode, PlacedObject pObj, string name, bool isNewObject)
+        public ComponentRepresentation(DevUI owner, string IDstring, DevUINode parentNode,
+                PlacedObject pObj, string name)
                 : base(owner, IDstring, parentNode, pObj, name)
         {
             subNodes.Add(new ComponentControlPanel(
                 owner, name+"_Panel", this, new Vector2(0, 40), pObj, name));
-
-            if (isNewObject)
-            {
-                switch (name)
-                {
-                    case "ImpactButton":
-                        component = new ImpactButton(pObj, owner.room);
-                        break;
-                    case "BasicCircuitLight":
-                        component = new BasicLight(pObj, owner.room);
-                        break;
-                    case "CircuitSwitch":
-                        component = new Switch(pObj, owner.room);
-                        break;
-                }
-                owner.room.AddObject(component);
-            }
         }
 
-        BaseComponent component;
-
-
-        class ComponentControlPanel : DevInterface.Panel
+        class ComponentControlPanel : Panel
         {
-            public ComponentControlPanel(DevInterface.DevUI owner, string IDstring,
-                    DevInterface.DevUINode parentNode, Vector2 pos, PlacedObject pObj, string name)
+            public ComponentControlPanel(DevUI owner, string IDstring,
+                    DevUINode parentNode, Vector2 pos, PlacedObject pObj, string name)
                     : base(owner, IDstring, parentNode, pos, new Vector2(205, 20), name)
             {
-                subNodes.Add(new CircuitIntegerControl(
-                    owner, "Circuit_Number", this, new Vector2(5, 5), "Circuit: ", pObj));
+                subNodes.Add(new CircuitStringControl(
+                        owner, "Component_Key", this, new Vector2(5, 5), "ID: ", pObj));
 
                 if (pObj.data is ColorComponentData)
                 {
@@ -51,47 +32,31 @@ namespace RegionKit.Circuits
                     subNodes.Add(new ComponentSlider(owner, "ColorB_Slider", this, new Vector2(5, 25), "Color B: "));
                 }
             }
+
         }
 
-        class CircuitIntegerControl : DevInterface.IntegerControl
+        class CircuitStringControl : CustomDevInterface.StringControl
         {
-            public CircuitIntegerControl(DevInterface.DevUI owner, string IDstring,
-                    DevInterface.DevUINode parentNode, Vector2 pos, string title,
-                    PlacedObject pObj)
-                    : base(owner, IDstring, parentNode, pos, title)
+            public CircuitStringControl(DevUI owner, string IDstring, DevUINode parentNode,
+                    Vector2 pos, string title, PlacedObject pObj)
+                    : base(owner, IDstring, parentNode, pos, title, (pObj.data as BaseComponentData).CircuitID)
             {
                 this.pObj = pObj;
             }
 
             readonly PlacedObject pObj;
 
-            public override void Refresh()
+            public override void SetValue(string newKey)
             {
-                NumberLabelText = (pObj.data as BaseComponentData).circuitNumber.ToString();
-                base.Refresh();
+                (pObj.data as BaseComponentData).CircuitID = newKey;
             }
 
-            public override void Increment(int change)
-            {
-                base.Increment(change);
-                BaseComponentData data = (pObj.data as BaseComponentData);
-                
-                data.circuitNumber += change;
-                if (data.circuitNumber < CircuitController.minCircuit)
-                {
-                    data.circuitNumber = CircuitController.maxCircuit;
-                }
-                else if (data.circuitNumber > CircuitController.maxCircuit)
-                {
-                    data.circuitNumber = CircuitController.minCircuit;
-                }
-            }
         }
 
-        class ComponentSlider : DevInterface.SSLightRodRepresentation.SSLightRodControlPanel.DepthControlSlider
+        class ComponentSlider : SSLightRodRepresentation.SSLightRodControlPanel.DepthControlSlider
         {
-            public ComponentSlider(DevInterface.DevUI owner, string IDstring,
-                    DevInterface.DevUINode parentNode, Vector2 pos, string title)
+            public ComponentSlider(DevUI owner, string IDstring, DevUINode parentNode,
+                    Vector2 pos, string title)
                     : base(owner, IDstring, parentNode, pos, title)
             { }
 

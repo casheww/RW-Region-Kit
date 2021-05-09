@@ -6,7 +6,7 @@ namespace RegionKit.Circuits
     {
         public BaseComponentData(PlacedObject owner) : base(owner)
         {
-            circuitNumber = 0;
+            CircuitID = "-";
         }
 
         public override void FromString(string s)
@@ -15,16 +15,16 @@ namespace RegionKit.Circuits
             string[] array = Regex.Split(s, "~");
             if (array.Length >= 1)
             {
-                circuitNumber = int.Parse(array[0]);
+                CircuitID = array[0];
             }
         }
 
         public override string ToString()
         {
-            return circuitNumber.ToString();
+            return CircuitID;
         }
 
-        public int circuitNumber;
-    }
+        public string CircuitID;
 
+    }
 }

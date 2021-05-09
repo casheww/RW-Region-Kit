@@ -52,47 +52,36 @@ namespace RegionKit {
 
                 if (pObj == null)
                 {
-                    isNewObject = true;
                     pObj = new PlacedObject(tp, null);
                     self.RoomSettings.placedObjects.Add(pObj);
                     pObj.pos = self.owner.room.game.cameras[0].pos +
                         Vector2.Lerp(self.owner.mousePos, new Vector2(-683f, 384f), 0.25f) +
                         Custom.DegToVec(Random.value * 360f) * 0.2f;
-                }
 
-                if (tp == EnumExt_Objects.ImpactButton)
-                {
-                    if (pObj == null)
+                    if (tp == EnumExt_Objects.ImpactButton)
                     {
                         component = new Circuits.ImpactButton(pObj, self.owner.room);
                     }
-                    rep = new Circuits.ComponentRepresentation(
-                        self.owner, tp.ToString() + "_Rep", self, pObj, tp.ToString(), isNewObject);
-                }
-                else if (tp == EnumExt_Objects.BasicCircuitLight)
-                {
-                    if (pObj == null)
+                    else if (tp == EnumExt_Objects.BasicCircuitLight)
                     {
                         component = new Circuits.BasicLight(pObj, self.owner.room);
                     }
-                    rep = new Circuits.ComponentRepresentation(
-                        self.owner, tp.ToString() + "_Rep", self, pObj, tp.ToString(), isNewObject);
-                }
-                else if (tp == EnumExt_Objects.CircuitSwitch)
-                {
-                    if (pObj == null)
+                    else if (tp == EnumExt_Objects.CircuitSwitch)
                     {
                         component = new Circuits.Switch(pObj, self.owner.room);
                     }
-                    rep = new Circuits.ComponentRepresentation(
-                        self.owner, tp.ToString() + "_Rep", self, pObj, tp.ToString(), isNewObject);
+                    else
+                    {
+                        Debug.Log($"u wot? invalid component {tp}");
+                    }
                 }
+
+                rep = new Circuits.ComponentRepresentation(
+                        self.owner, tp.ToString() + "_Rep", self, pObj, tp.ToString());
 
                 if (component != null)
                 {
                     self.owner.room.AddObject(component);
-                    Circuits.CircuitController.Instance
-                        .AddComponent(componentData.circuitNumber, component);
                 }
             }
 
@@ -117,15 +106,26 @@ namespace RegionKit {
                 self.data = new PWLightRodData(self);
             }
 
+            // add other stuff BEFORE circuits else
+
             // circuit components
-            else if (self.type == EnumExt_Objects.ImpactButton ||
-                self.type == EnumExt_Objects.CircuitSwitch)
+            else
             {
-                self.data = new Circuits.InputComponentData(self);
+                GenerateCircuitComponentData(self);
             }
-            else if (self.type == EnumExt_Objects.BasicCircuitLight)
+            
+        }
+
+        static void GenerateCircuitComponentData(PlacedObject pObj)
+        {
+            if (pObj.type == EnumExt_Objects.ImpactButton ||
+                pObj.type == EnumExt_Objects.CircuitSwitch)
             {
-                self.data = new Circuits.ColorComponentData(self);
+                pObj.data = new Circuits.InputComponentData(pObj);
+            }
+            else if (pObj.type == EnumExt_Objects.BasicCircuitLight)
+            {
+                pObj.data = new Circuits.ColorComponentData(pObj);
             }
         }
 
@@ -135,41 +135,30 @@ namespace RegionKit {
             if (self.game == null) { return; }
             //Load Objects
             for (int l = 0; l < self.roomSettings.placedObjects.Count; ++l) {
-                var obj = self.roomSettings.placedObjects[l];
-                if (obj.active)
+                var pObj = self.roomSettings.placedObjects[l];
+                if (pObj != null && pObj.active)
                 {
-                    // PW light rod
-                    if (obj.type == EnumExt_Objects.PWLightrod)
+                    UpdatableAndDeletable uad = null;
+                    if (pObj.type == EnumExt_Objects.PWLightrod)
                     {
-                        self.AddObject(new PWLightRod(obj, self));
+                        uad = new PWLightRod(pObj, self);
+                    }
+                    else if (pObj.type == EnumExt_Objects.ImpactButton)
+                    {
+                        uad = new Circuits.ImpactButton(pObj, self);
+                    }
+                    else if (pObj.type == EnumExt_Objects.BasicCircuitLight)
+                    {
+                        uad = new Circuits.BasicLight(pObj, self);
+                    }
+                    else if (pObj.type == EnumExt_Objects.CircuitSwitch)
+                    {
+                        uad = new Circuits.Switch(pObj, self);
                     }
 
-                    // Circuit components - they also require additional setup
-                    else if (obj.data is Circuits.BaseComponentData componentData)
+                    if (uad != null)
                     {
-                        Circuits.BaseComponent component = null;
-
-                        if (obj.type == EnumExt_Objects.ImpactButton)
-                        {
-                            component = new Circuits.ImpactButton(obj, self);
-                        }
-                        else if (obj.type == EnumExt_Objects.BasicCircuitLight)
-                        {
-                            component = new Circuits.BasicLight(obj, self);
-                        }
-                        else if (obj.type == EnumExt_Objects.CircuitSwitch)
-                        {
-                            component = new Circuits.Switch(obj, self);
-                        }
-
-                        self.AddObject(component);
-
-                        // ... aforementioned additional setup
-                        if (component != null)
-                        {
-                            Circuits.CircuitController.Instance
-                                .AddComponent(componentData.circuitNumber, component);
-                        }
+                        self.AddObject(uad);
                     }
                 }
             }

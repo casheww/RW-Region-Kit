@@ -29,7 +29,7 @@ namespace RegionKit.Circuits
                 if (counter < 0)
                 {
                     data.activated = false;
-                    Debug.Log($"switched off circuit {data.circuitNumber}");
+                    Debug.Log($"switched off circuit {data.CircuitID}");
                     counter = counterMax;
                 }
                 return;
@@ -45,7 +45,7 @@ namespace RegionKit.Circuits
                 if (Input.GetKey(KeyCode.D) && dist < activationRadius)
                 {
                     data.activated = true;
-                    Debug.Log($"switched on circuit {data.circuitNumber}");
+                    Debug.Log($"switched on circuit {data.CircuitID}");
                 }
             }
         }

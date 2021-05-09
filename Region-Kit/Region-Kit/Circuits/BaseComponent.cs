@@ -14,10 +14,24 @@ namespace RegionKit.Circuits
         public Type type;
         protected InputType _inType;
 
-        public InputType InType => type == Type.Output ? InputType.NotAnInput : _inType;
+        public InputType InType => type == Type.Input ? _inType : InputType.NotAnInput;
 
         public virtual void Activate() { }
         public virtual void Deactivate() { }
+
+        public override void Update(bool eu)
+        {
+            base.Update(eu);
+
+            BaseComponentData data = pObj.data as BaseComponentData;
+            if (IDLastUpdate != data.CircuitID)
+            {
+                CircuitController.Instance.UpdateComponentRegistration(IDLastUpdate, data.CircuitID, this);
+                IDLastUpdate = data.CircuitID;
+            }
+        }
+
+        string IDLastUpdate = null;
 
         public void AddToContainer(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, FContainer newContatiner)
         {
@@ -71,7 +85,8 @@ namespace RegionKit.Circuits
         public enum Type
         {
             Input,
-            Output
+            Output,
+            LogicGate
         }
 
         public enum InputType
