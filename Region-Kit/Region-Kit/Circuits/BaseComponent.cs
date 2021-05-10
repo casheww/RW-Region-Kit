@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using ManagedPlacedObjects;
+using UnityEngine;
 
 namespace RegionKit.Circuits
 {
@@ -8,6 +9,7 @@ namespace RegionKit.Circuits
         {
             this.pObj = pObj;
             this.room = room;
+            Debug.Log($"created circuits component (type:{this.GetType()})");
         }
 
         public PlacedObject pObj;
@@ -23,15 +25,16 @@ namespace RegionKit.Circuits
         {
             base.Update(eu);
 
-            BaseComponentData data = pObj.data as BaseComponentData;
-            if (IDLastUpdate != data.CircuitID)
+            PlacedObjectsManager.ManagedData data = pObj.data as PlacedObjectsManager.ManagedData;
+            string currentCircuitID = data.GetValue<string>(MKeys.circuitID);
+            if (lastCircuitID != currentCircuitID)
             {
-                CircuitController.Instance.UpdateComponentRegistration(IDLastUpdate, data.CircuitID, this);
-                IDLastUpdate = data.CircuitID;
+                CircuitController.Instance.MigrateComponent(lastCircuitID, currentCircuitID, this);
+                lastCircuitID = currentCircuitID;
             }
         }
 
-        string IDLastUpdate = null;
+        string lastCircuitID = null;
 
         public void AddToContainer(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, FContainer newContatiner)
         {
@@ -97,5 +100,4 @@ namespace RegionKit.Circuits
         }
 
     }
-
 }

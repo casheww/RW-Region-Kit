@@ -33,16 +33,13 @@
   <ItemGroup>
     <Compile Include="BrokenPatch.cs" />
     <Compile Include="Circuits\BaseComponent.cs" />
-    <Compile Include="Circuits\BaseComponentData.cs" />
     <Compile Include="Circuits\BasicLight.cs" />
     <Compile Include="Circuits\CircuitController.cs" />
-    <Compile Include="Circuits\ColorComponentData.cs" />
-    <Compile Include="Circuits\ComponentRepresentation.cs" />
-    <Compile Include="Circuits\ImpactButton.cs" />
-    <Compile Include="Circuits\InputComponentData.cs" />
+    <Compile Include="Circuits\Button.cs" />
+    <Compile Include="Circuits\MKeys.cs" />
+    <Compile Include="PlacedObjectsManager.cs" />
     <Compile Include="Circuits\Switch.cs" />
     <Compile Include="CustomArenaDivisions.cs" />
-    <Compile Include="CustomDevInterface\StringControl.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PWLightRod.cs" />
     <Compile Include="RegionKit.cs" />

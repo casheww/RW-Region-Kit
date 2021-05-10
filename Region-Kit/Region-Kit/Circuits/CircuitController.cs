@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using ManagedPlacedObjects;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace RegionKit.Circuits
@@ -7,20 +8,65 @@ namespace RegionKit.Circuits
     {
         public static CircuitController Instance { get; private set; }
 
-        Dictionary<string, Circuit> circuits = new Dictionary<string, Circuit>();
+        readonly Dictionary<string, Circuit> circuits = new Dictionary<string, Circuit>();
 
         public void Start()
         {
             Instance = this;
+
+            if (!objectsSetUp) SetupObjects();
         }
 
         public void Update()
         {
-            foreach (Circuit c in circuits.Values)
+            List<string> idsForRemoval = new List<string>();
+
+            foreach (string id in circuits.Keys)
             {
+                Circuit c = circuits[id];
+                if (c.IsEmpty)
+                {
+                    idsForRemoval.Add(id);
+                }
+
                 c.Update();
             }
+
+            // remove empty circuits and hope that the garbage collector gets the objects?
+            foreach (string id in idsForRemoval)
+            {
+                circuits.Remove(id);
+            }
         }
+
+        private static void SetupObjects()
+        {
+            // set up representations and data for basic components (only circuit ID) using henpemaz' framework
+            List<PlacedObjectsManager.ManagedField> fields = new List<PlacedObjectsManager.ManagedField>()
+            {
+                new PlacedObjectsManager.StringField(MKeys.circuitID, "default_circuit", "Circuit ID"),
+                new ComponentActivityField(MKeys.activated, false)
+            };
+            PlacedObjectsManager.RegisterFullyManagedObjectType(fields.ToArray(), typeof(Button), "Circuit_Button");
+            PlacedObjectsManager.RegisterFullyManagedObjectType(fields.ToArray(), typeof(Switch), "Circuit_Switch");
+
+            // set up reps for components with colours and other funky stuff
+            fields.AddRange(new PlacedObjectsManager.ManagedField[]
+            {
+                new PlacedObjectsManager.FloatField(MKeys.flicker, 0, 1, 0.4f, 0.05f, displayName: "Flicker"),
+                new PlacedObjectsManager.FloatField(MKeys.strength, 0, 1, 0.7f, 0.05f, displayName: "Strength"),
+                new PlacedObjectsManager.IntegerField(MKeys.red, 0, 255, 80,
+                        PlacedObjectsManager.ManagedFieldWithPanel.ControlType.slider, "Red"),
+                new PlacedObjectsManager.IntegerField(MKeys.green, 0, 255, 200,
+                        PlacedObjectsManager.ManagedFieldWithPanel.ControlType.slider, "Green"),
+                new PlacedObjectsManager.IntegerField(MKeys.blue, 0, 255, 200,
+                        PlacedObjectsManager.ManagedFieldWithPanel.ControlType.slider, "Blue")
+            });
+            PlacedObjectsManager.RegisterFullyManagedObjectType(fields.ToArray(), typeof(BasicLight), "Circuit_BasicLight");
+
+            objectsSetUp = true;
+        }
+        private static bool objectsSetUp = false;
 
         public void AddComponent(string circuitID, BaseComponent component)
         {
@@ -68,15 +114,26 @@ namespace RegionKit.Circuits
             }
         }
 
-        public void UpdateComponentRegistration(string oldID, string newID, BaseComponent component)
+        public void MigrateComponent(string oldID, string newID, BaseComponent component)
         {
             if (oldID != null)
             {
                 RemoveComponent(oldID, component);
             }
+            if (component.type == BaseComponent.Type.Output)
+            {
+                component.Deactivate();
+            }
             AddComponent(newID, component);
         }
 
+        private class ComponentActivityField : PlacedObjectsManager.BooleanField
+        {
+            public ComponentActivityField(string key, bool defaultValue) : base(key, defaultValue)
+            { }
+
+            public override bool NeedsControlPanel => false;    // no representation
+        }
 
         class Circuit
         {
@@ -90,6 +147,11 @@ namespace RegionKit.Circuits
             public List<BaseComponent> outputComponents = new List<BaseComponent>();
             public List<BaseComponent> logicComponents = new List<BaseComponent>();
 
+            public bool IsEmpty =>
+                inputComponents.Count == 0 &&
+                outputComponents.Count == 0 &&
+                logicComponents.Count == 0;
+
             bool hadPowerLastUpdate = false;
 
             public void Update()
@@ -98,14 +160,15 @@ namespace RegionKit.Circuits
 
                 foreach (BaseComponent c in inputComponents)
                 {
-                    InputComponentData data = (c.pObj.data as InputComponentData);
-                    if (data != null && data.activated)
+                    PlacedObjectsManager.ManagedData data = (c.pObj.data as PlacedObjectsManager.ManagedData);
+                    if (data != null && data.GetValue<bool>(MKeys.activated))
                     {
                         hasPower = true;
                         break;
                     }
                 }
 
+                // activate/deactivate output and logic components *only if necessary*
                 bool powerChanged = hasPower != hadPowerLastUpdate;
                 if (!powerChanged) return;
 
@@ -137,9 +200,10 @@ namespace RegionKit.Circuits
 
             public void ForceReset()
             {
+                // just in case...
                 foreach (BaseComponent c in inputComponents)
                 {
-                    (c.pObj.data as InputComponentData).activated = false;
+                    (c.pObj.data as PlacedObjectsManager.ManagedData).SetValue(MKeys.activated, false);
                 }
                 foreach (BaseComponent c in outputComponents)
                 {

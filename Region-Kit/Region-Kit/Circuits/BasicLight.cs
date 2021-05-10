@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using ManagedPlacedObjects;
+using UnityEngine;
 
 namespace RegionKit.Circuits
 {
@@ -27,9 +28,30 @@ namespace RegionKit.Circuits
 
         public override void Update(bool eu)
         {
-            ColorComponentData data = pObj.data as ColorComponentData;
+            PlacedObjectsManager.ManagedData data = pObj.data as PlacedObjectsManager.ManagedData;
 
-            light.color = data.color;
+            light.color = CalculateColor(data);
+
+            light.setAlpha = activated ? NoisifyAlpha(data.GetValue<float>(MKeys.flicker)) : 0;
+
+            light.setRad = data.GetValue<float>(MKeys.strength) * maxStrengthTileCount * 20;
+
+            light.setPos = pObj.pos;
+            base.Update(eu);
+        }
+
+        Color CalculateColor(PlacedObjectsManager.ManagedData data)
+        {
+            int r = data.GetValue<int>(MKeys.red);
+            int g = data.GetValue<int>(MKeys.green);
+            int b = data.GetValue<int>(MKeys.blue);
+
+            return new Color(r / 255f, g / 255f, b / 255f);
+        }
+
+        float NoisifyAlpha(float flicker)
+        {
+            float _alpha = baseAlpha;
 
             flickerWait--;
             if (flickerWait < -8)
@@ -37,32 +59,17 @@ namespace RegionKit.Circuits
                 flickerWait = (int)Mathf.Lerp(10, 120, Random.value);
             }
 
-            float clampedFlicker = Mathf.Clamp(data.flicker, 0.05f, 1f);
+            float clampedFlicker = Mathf.Clamp(flicker, 0.05f, 1f);
             if (xForSin > 2 * Mathf.PI) xForSin = 0;
             else xForSin += Mathf.PI / (clampedFlicker * baseSinWavelength / 2) + (Random.Range(-10, 10) / 10);
 
-            light.setAlpha = activated ? AlphaWithNoise : 0;
-
-            light.setRad = data.strength * maxStrengthTileCount * 20;
-
-            light.setPos = pObj.pos;
-            base.Update(eu);
-        }
-
-        float AlphaWithNoise
-        {
-            get
+            if (flickerWait <= 0)
             {
-                float _alpha = baseAlpha;
-                
-                if (flickerWait <= 0)
-                {
-                    _alpha *= Mathf.Pow(flickerRatio, 10 + flickerWait);
-                }
-
-                float sinMod = Mathf.Sin(xForSin) * 0.05f;
-                return Mathf.Clamp01(_alpha + sinMod);
+                _alpha *= Mathf.Pow(flickerRatio, 10 + flickerWait);
             }
+
+            float sinMod = Mathf.Sin(xForSin) * 0.05f;
+            return Mathf.Clamp01(_alpha + sinMod);
         }
 
         const int maxStrengthTileCount = 30;
