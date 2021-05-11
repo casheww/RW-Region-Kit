@@ -40,9 +40,12 @@ namespace RegionKit.Circuits
             }
         }
 
+        /// <summary>
+        /// Handles registration for fully managed managed objects in henpemaz's framework
+        /// </summary>
         private static void SetupObjects()
         {
-            // set up representations and data for basic components (only circuit ID) using henpemaz' framework
+            // basic components
             List<PlacedObjectsManager.ManagedField> fields = new List<PlacedObjectsManager.ManagedField>()
             {
                 new PlacedObjectsManager.StringField(MKeys.circuitID, "default_circuit", "Circuit ID"),
@@ -51,7 +54,7 @@ namespace RegionKit.Circuits
             PlacedObjectsManager.RegisterFullyManagedObjectType(fields.ToArray(), typeof(Button), "Circuit_Button");
             PlacedObjectsManager.RegisterFullyManagedObjectType(fields.ToArray(), typeof(Switch), "Circuit_Switch");
 
-            // set up reps for components with colours and other funky stuff
+            // components with colours and other funky stuff
             fields.AddRange(new PlacedObjectsManager.ManagedField[]
             {
                 new PlacedObjectsManager.FloatField(MKeys.flicker, 0, 1, 0.4f, 0.05f, displayName: "Flicker"),
@@ -65,6 +68,7 @@ namespace RegionKit.Circuits
             });
             PlacedObjectsManager.RegisterFullyManagedObjectType(fields.ToArray(), typeof(BasicLight), "Circuit_BasicLight");
 
+            // logic gates with 2 inputs
             fields = new List<PlacedObjectsManager.ManagedField>()
             {
                 new PlacedObjectsManager.StringField(MKeys.inputA, "default_circuit", "Input A"),
@@ -76,6 +80,7 @@ namespace RegionKit.Circuits
             };
             PlacedObjectsManager.RegisterFullyManagedObjectType(fields.ToArray(), typeof(LogicGate_TwoInputs), "Circuit_LogicGate_2");
 
+            // logic gates with a single input
             fields = new List<PlacedObjectsManager.ManagedField>()
             {
                 new PlacedObjectsManager.StringField(MKeys.inputA, "default_circuit", "Input"),
@@ -86,11 +91,23 @@ namespace RegionKit.Circuits
             };
             PlacedObjectsManager.RegisterFullyManagedObjectType(fields.ToArray(), typeof(LogicGate_OneInput), "Circuit_LogicGate_1");
 
+            // clock pulse generator
+            fields = new List<PlacedObjectsManager.ManagedField>()
+            {
+                new PlacedObjectsManager.StringField(MKeys.circuitID, "default_circuit", "Circuit ID"),
+                new ComponentActivityField(MKeys.activated, false),
+                new PlacedObjectsManager.IntegerField(MKeys.clockOnMax, 10, 600, 60,
+                        PlacedObjectsManager.ManagedFieldWithPanel.ControlType.text, "On-frames"),
+                new PlacedObjectsManager.IntegerField(MKeys.clockOffMax, 10, 600, 60,
+                        PlacedObjectsManager.ManagedFieldWithPanel.ControlType.text, "Off-frames")
+            };
+            PlacedObjectsManager.RegisterFullyManagedObjectType(fields.ToArray(), typeof(Clock), "Circuit_Clock");
+
             objectsSetUp = true;
         }
         private static bool objectsSetUp = false;
 
-        public void AddComponent(string circuitID, BaseComponent component)
+        public void AddComponent(string circuitID, ICircuitComponent component)
         {
             Debug.Log($"adding component {component} to {circuitID}");
 
@@ -99,18 +116,18 @@ namespace RegionKit.Circuits
                 circuits[circuitID] = new Circuit(circuitID);
             }
 
-            switch (component.type)
+            switch (component.Type)
             {
-                case BaseComponent.Type.Input:
+                case CompType.Input:
                     circuits[circuitID].inputComponents.Add(component);
                     break;
-                case BaseComponent.Type.Output:
+                case CompType.Output:
                     circuits[circuitID].outputComponents.Add(component);
                     break;
             }
         }
 
-        public void RemoveComponent(string circuitID, BaseComponent component)
+        public void RemoveComponent(string circuitID, ICircuitComponent component)
         {
             Debug.Log($"removing component {component} from {circuitID}");
 
@@ -119,30 +136,34 @@ namespace RegionKit.Circuits
                 circuits[circuitID] = new Circuit(circuitID);
             }
 
-            switch (component.type)
+            switch (component.Type)
             {
-                case BaseComponent.Type.Input:
+                case CompType.Input:
                     circuits[circuitID].inputComponents.Remove(component);
                     break;
-                case BaseComponent.Type.Output:
+                case CompType.Output:
                     circuits[circuitID].outputComponents.Remove(component);
                     break;
             }
         }
 
-        public void MigrateComponent(string oldID, string newID, BaseComponent component)
+        public void MigrateComponent(string oldID, string newID, ICircuitComponent component)
         {
             if (oldID != null)
             {
                 RemoveComponent(oldID, component);
             }
-            if (component.type == BaseComponent.Type.Output)
+            if (component.Type == CompType.Output)
             {
-                component.Deactivate();
+                component.Activated = false;
             }
             AddComponent(newID, component);
         }
 
+        /// <summary>
+        /// Tries to get the Circuit object with the given circuit ID
+        /// </summary>
+        /// <returns>Whether the get was successful</returns>
         bool TryGetCircuit(string id, out Circuit circuit)
         {
             if (circuits.TryGetValue(id, out Circuit c))
@@ -154,6 +175,11 @@ namespace RegionKit.Circuits
             return false;
         }
 
+
+        /// <summary>
+        /// A Managed bool field for henpemaz's framework that has no representation.
+        /// Used for the `actiavted` field of circuit components.
+        /// </summary>
         private class ComponentActivityField : PlacedObjectsManager.BooleanField
         {
             public ComponentActivityField(string key, bool defaultValue) : base(key, defaultValue)
@@ -170,8 +196,8 @@ namespace RegionKit.Circuits
             }
 
             public string ID { get; private set; }
-            public List<BaseComponent> inputComponents = new List<BaseComponent>();
-            public List<BaseComponent> outputComponents = new List<BaseComponent>();
+            public List<ICircuitComponent> inputComponents = new List<ICircuitComponent>();
+            public List<ICircuitComponent> outputComponents = new List<ICircuitComponent>();
 
             public bool IsEmpty =>
                 inputComponents.Count == 0 &&
@@ -186,17 +212,14 @@ namespace RegionKit.Circuits
 
                 UpdateLogicGates();
 
-                foreach (BaseComponent comp in inputComponents)
+                foreach (ICircuitComponent comp in inputComponents)
                 {
-                    PlacedObjectsManager.ManagedData data = comp.pObj.data as PlacedObjectsManager.ManagedData;
-                    if (data == null) continue;
-
                     if (comp is LogicGate gate && gate.Output)
                     {
                         HasPower = true;
                         break;
                     }
-                    else if (comp.InType != BaseComponent.InputType.LogicGate && data.GetValue<bool>(MKeys.activated))
+                    else if (comp.InType != InputType.LogicGate && comp.Activated)
                     {
                         HasPower = true;
                         break;
@@ -209,17 +232,17 @@ namespace RegionKit.Circuits
 
                 if (HasPower)
                 {
-                    foreach (BaseComponent comp in outputComponents)
+                    foreach (ICircuitComponent comp in outputComponents)
                     {
-                        comp.Activate();
+                        comp.Activated = true;
                     }
                     hadPowerLastUpdate = true;
                 }
                 else
                 {
-                    foreach (BaseComponent comp in outputComponents)
+                    foreach (ICircuitComponent comp in outputComponents)
                     {
-                        comp.Deactivate();
+                        comp.Activated = false;
                     }
                     hadPowerLastUpdate = false;
                 }
@@ -227,7 +250,7 @@ namespace RegionKit.Circuits
 
             void UpdateLogicGates()
             {
-                foreach (BaseComponent comp in inputComponents)
+                foreach (ICircuitComponent comp in inputComponents)
                 {
                     if (!(comp is LogicGate gate)) continue;
 
@@ -250,13 +273,13 @@ namespace RegionKit.Circuits
             public void ForceReset()
             {
                 // just in case...
-                foreach (BaseComponent c in inputComponents)
+                foreach (ICircuitComponent c in inputComponents)
                 {
-                    (c.pObj.data as PlacedObjectsManager.ManagedData).SetValue(MKeys.activated, false);
+                    c.Activated = false;
                 }
                 foreach (BaseComponent c in outputComponents)
                 {
-                    c.Deactivate();
+                    c.Activated = false;
                 }
                 hadPowerLastUpdate = false;
             }

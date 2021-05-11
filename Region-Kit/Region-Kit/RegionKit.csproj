@@ -32,6 +32,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="BrokenPatch.cs" />
+    <Compile Include="Circuits\Clock.cs" />
+    <Compile Include="Circuits\ComponentTypes.cs" />
+    <Compile Include="Circuits\ICircuitComponent.cs" />
     <Compile Include="Circuits\LogicGate.cs" />
     <Compile Include="Circuits\BaseComponent.cs" />
     <Compile Include="Circuits\BasicLight.cs" />

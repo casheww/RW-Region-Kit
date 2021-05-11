@@ -4,11 +4,7 @@ namespace RegionKit.Circuits
 {
     abstract class LogicGate : BaseComponent
     {
-        public LogicGate(PlacedObject pObj, Room room) : base(pObj, room)
-        {
-            type = Type.Input;
-            _inType = InputType.LogicGate;
-        }
+        public LogicGate(PlacedObject pObj, Room room) : base(pObj, room, CompType.Input, InputType.LogicGate) { }
 
         public abstract void SetInputs(bool[] inputs);
         public abstract bool Output { get; }

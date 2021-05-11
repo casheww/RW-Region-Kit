@@ -4,13 +4,11 @@ using UnityEngine;
 
 namespace RegionKit.Circuits
 {
-    class Button : BaseComponent
+    class Button : BaseComponent, IDrawable
     {
-        public Button(PlacedObject pObj, Room room) : base(pObj, room)
+        public Button(PlacedObject pObj, Room room) : base(pObj, room, CompType.Input, InputType.Button)
         {
             counter = counterMax;
-            type = Type.Input;
-            _inType = InputType.Button;
         }
 
         const int counterMax = 150;
@@ -29,7 +27,7 @@ namespace RegionKit.Circuits
                 counter--;
                 if (counter < 0)
                 {
-                    Deactivate();
+                    Activated = false;
                     Debug.Log($"button stopped powering {data.GetValue<string>(MKeys.circuitID)}");
                     counter = counterMax;
                 }
@@ -45,24 +43,13 @@ namespace RegionKit.Circuits
 
                 if (Input.GetKey(KeyCode.D) && dist < activationRadius)
                 {
-                    Activate();
+                    Activated = true;
                     Debug.Log($"button started powering {data.GetValue<string>(MKeys.circuitID)}");
                 }
             }
         }
 
-        public override void Activate()
-        {
-            base.Activate();
-            (pObj.data as PlacedObjectsManager.ManagedData).SetValue(MKeys.activated, true);
-        }
-        public override void Deactivate()
-        {
-            base.Deactivate();
-            (pObj.data as PlacedObjectsManager.ManagedData).SetValue(MKeys.activated, false);
-        }
-
-        public override void DrawSprites(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, float timeStacker, Vector2 camPos)
+        public void DrawSprites(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, float timeStacker, Vector2 camPos)
         {
             if (onColour == null)
             {
@@ -89,7 +76,7 @@ namespace RegionKit.Circuits
             }
         }
 
-        public override void InitiateSprites(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam)
+        public void InitiateSprites(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam)
         {
             sLeaser.sprites = new FSprite[]
             {
@@ -106,6 +93,27 @@ namespace RegionKit.Circuits
             sLeaser.sprites[1].shader = rCam.game.rainWorld.Shaders["CustomDepth"];
 
             AddToContainer(sLeaser, rCam, null);
+        }
+
+        public void ApplyPalette(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, RoomPalette palette)
+        {
+            foreach (FSprite fsprite in sLeaser.sprites)
+            {
+                fsprite.color = palette.blackColor;
+            }
+        }
+
+        public void AddToContainer(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, FContainer newContatiner)
+        {
+            if (newContatiner == null)
+            {
+                newContatiner = rCam.ReturnFContainer("Items");
+            }
+            foreach (FSprite fsprite in sLeaser.sprites)
+            {
+                fsprite.RemoveFromContainer();
+                newContatiner.AddChild(fsprite);
+            }
         }
     }
 

@@ -27,5 +27,9 @@ namespace RegionKit.Circuits
         public const string inputA = "l_inputA";
         public const string inputB = "l_inputB";
         public const string output = "l_output";
+
+        // clock
+        public const string clockOnMax = "clock_on_max";
+        public const string clockOffMax = "clock_off_max";
     }
 }

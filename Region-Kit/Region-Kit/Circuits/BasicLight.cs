@@ -5,9 +5,8 @@ namespace RegionKit.Circuits
 {
     class BasicLight : BaseComponent
     {
-        public BasicLight(PlacedObject pObj, Room room) : base(pObj, room)
+        public BasicLight(PlacedObject pObj, Room room) : base(pObj, room, CompType.Output)
         {
-            type = Type.Output;
             light = new LightSource(pObj.pos, false, Color.white, this);
             room.AddObject(light);
         }
@@ -20,7 +19,7 @@ namespace RegionKit.Circuits
 
             light.color = CalculateColor(data);
 
-            light.setAlpha = activated ? NoisifyAlpha(data.GetValue<float>(MKeys.flicker)) : 0;
+            light.setAlpha = Activated ? NoisifyAlpha(data.GetValue<float>(MKeys.flicker)) : 0;
 
             light.setRad = data.GetValue<float>(MKeys.strength) * maxStrengthTileCount * 20;
 
@@ -66,13 +65,6 @@ namespace RegionKit.Circuits
         const float flickerRatio = 0.8f;
         const int baseSinWavelength = 20;
         float xForSin = 2 * Mathf.PI * Random.value;
-
-        public override void DrawSprites(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, float timeStacker, Vector2 camPos)
-        { }
-        public override void InitiateSprites(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam)
-        {
-            sLeaser.sprites = new FSprite[0];
-        }
 
     }
 }
