@@ -8,23 +8,11 @@ namespace RegionKit.Circuits
         public BasicLight(PlacedObject pObj, Room room) : base(pObj, room)
         {
             type = Type.Output;
-            activated = false;
             light = new LightSource(pObj.pos, false, Color.white, this);
             room.AddObject(light);
         }
 
-        LightSource light;
-        bool activated;
-
-        public override void Activate()
-        {
-            activated = true;
-        }
-
-        public override void Deactivate()
-        {
-            activated = false;
-        }
+        readonly LightSource light;
 
         public override void Update(bool eu)
         {

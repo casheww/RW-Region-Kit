@@ -21,5 +21,11 @@ namespace RegionKit.Circuits
         public const string red = "red";
         public const string green = "green";
         public const string blue = "blue";
+
+        // logic gate enum
+        public const string logicOp = "logic";
+        public const string inputA = "l_inputA";
+        public const string inputB = "l_inputB";
+        public const string output = "l_output";
     }
 }

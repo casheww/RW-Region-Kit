@@ -29,7 +29,7 @@ namespace RegionKit.Circuits
                 counter--;
                 if (counter < 0)
                 {
-                    data.SetValue("activated", false);
+                    Deactivate();
                     Debug.Log($"button stopped powering {data.GetValue<string>(MKeys.circuitID)}");
                     counter = counterMax;
                 }
@@ -45,10 +45,21 @@ namespace RegionKit.Circuits
 
                 if (Input.GetKey(KeyCode.D) && dist < activationRadius)
                 {
-                    data.SetValue(MKeys.activated, true);
+                    Activate();
                     Debug.Log($"button started powering {data.GetValue<string>(MKeys.circuitID)}");
                 }
             }
+        }
+
+        public override void Activate()
+        {
+            base.Activate();
+            (pObj.data as PlacedObjectsManager.ManagedData).SetValue(MKeys.activated, true);
+        }
+        public override void Deactivate()
+        {
+            base.Deactivate();
+            (pObj.data as PlacedObjectsManager.ManagedData).SetValue(MKeys.activated, false);
         }
 
         public override void DrawSprites(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, float timeStacker, Vector2 camPos)

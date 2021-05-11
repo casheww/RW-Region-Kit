@@ -303,8 +303,7 @@ namespace ManagedPlacedObjects
                     catch
                     {
                         try { return (UpdatableAndDeletable)Activator.CreateInstance(objectType, new object[] { room }); } // Objects that scan room for data or no data;
-                        catch { throw new ArgumentException("ManagedObjectType.MakeObject : objectType must have a constructor like (Room room, PlacedObject pObj) or (PlacedObject pObj, Room room) or (Room room)"); }
-
+                        catch { throw new ArgumentException($"ManagedObjectType.MakeObject : objectType must have a constructor like (Room room, PlacedObject pObj) or (PlacedObject pObj, Room room) or (Room room) [{objectType}]"); }
                     }
                 }
             }

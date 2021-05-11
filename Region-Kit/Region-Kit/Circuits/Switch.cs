@@ -30,11 +30,22 @@ namespace RegionKit.Circuits
 
                 if (Input.GetKeyDown(KeyCode.D) && dist < activationRadius)
                 {
-                    bool activation = data.GetValue<bool>(MKeys.activated);
-                    data.SetValue(MKeys.activated, !activation);
-                    Debug.Log($"switched {(!activation ? "on" : "off")} circuit {data.GetValue<string>(MKeys.circuitID)}");
+                    if (!activated) Activate();
+                    else Deactivate();
+                    Debug.Log($"toggled power to circuit {data.GetValue<string>(MKeys.circuitID)} {(activated ? "on" : "off")}");
                 }
             }
+        }
+
+        public override void Activate()
+        {
+            base.Activate();
+            (pObj.data as PlacedObjectsManager.ManagedData).SetValue(MKeys.activated, true);
+        }
+        public override void Deactivate()
+        {
+            base.Deactivate();
+            (pObj.data as PlacedObjectsManager.ManagedData).SetValue(MKeys.activated, false);
         }
 
         public override void DrawSprites(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, float timeStacker, Vector2 camPos)

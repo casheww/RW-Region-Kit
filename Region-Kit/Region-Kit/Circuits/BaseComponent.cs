@@ -3,12 +3,13 @@ using UnityEngine;
 
 namespace RegionKit.Circuits
 {
-    class BaseComponent : UpdatableAndDeletable, IDrawable
+    abstract class BaseComponent : UpdatableAndDeletable, IDrawable
     {
         public BaseComponent(PlacedObject pObj, Room room)
         {
             this.pObj = pObj;
             this.room = room;
+            activated = false;
             Debug.Log($"created circuits component (type:{this.GetType()})");
         }
 
@@ -18,21 +19,36 @@ namespace RegionKit.Circuits
 
         public InputType InType => type == Type.Input ? _inType : InputType.NotAnInput;
 
-        public virtual void Activate() { }
-        public virtual void Deactivate() { }
+        protected bool activated;
+
+        public virtual void Activate() { activated = true; }
+        public virtual void Deactivate() { activated = false; }
 
         public override void Update(bool eu)
         {
             base.Update(eu);
 
             PlacedObjectsManager.ManagedData data = pObj.data as PlacedObjectsManager.ManagedData;
-            string currentCircuitID = data.GetValue<string>(MKeys.circuitID);
+
+            if (firstUpdate)
+            {
+                if (type == Type.Input)
+                {
+                    // load saved activation status
+                    activated = data.GetValue<bool>(MKeys.activated);
+                }
+                firstUpdate = false;
+            }
+
+            // update circuit ID based on dev input
+            string currentCircuitID = this is LogicGate ? data.GetValue<string>(MKeys.output) : data.GetValue<string>(MKeys.circuitID);
             if (lastCircuitID != currentCircuitID)
             {
                 CircuitController.Instance.MigrateComponent(lastCircuitID, currentCircuitID, this);
                 lastCircuitID = currentCircuitID;
             }
         }
+        bool firstUpdate = true;
 
         string lastCircuitID = null;
 
@@ -89,14 +105,14 @@ namespace RegionKit.Circuits
         {
             Input,
             Output,
-            LogicGate
         }
 
         public enum InputType
         {
             NotAnInput,
             Button,
-            Switch
+            Switch,
+            LogicGate
         }
 
     }

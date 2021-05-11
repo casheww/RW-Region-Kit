@@ -10,6 +10,7 @@ namespace RegionKit.Circuits
 
         readonly Dictionary<string, Circuit> circuits = new Dictionary<string, Circuit>();
 
+
         public void Start()
         {
             Instance = this;
@@ -64,6 +65,27 @@ namespace RegionKit.Circuits
             });
             PlacedObjectsManager.RegisterFullyManagedObjectType(fields.ToArray(), typeof(BasicLight), "Circuit_BasicLight");
 
+            fields = new List<PlacedObjectsManager.ManagedField>()
+            {
+                new PlacedObjectsManager.StringField(MKeys.inputA, "default_circuit", "Input A"),
+                new PlacedObjectsManager.StringField(MKeys.inputB, "default_circuit", "Input B"),
+                new PlacedObjectsManager.EnumField(MKeys.logicOp, typeof(LogicGate_TwoInputs.Op), LogicGate_TwoInputs.Op.AND,
+                        control: PlacedObjectsManager.ManagedFieldWithPanel.ControlType.arrows, displayName: "Operator"),
+                new PlacedObjectsManager.StringField(MKeys.output, "default_circuit", "Output"),
+                new ComponentActivityField(MKeys.activated, false)
+            };
+            PlacedObjectsManager.RegisterFullyManagedObjectType(fields.ToArray(), typeof(LogicGate_TwoInputs), "Circuit_LogicGate_2");
+
+            fields = new List<PlacedObjectsManager.ManagedField>()
+            {
+                new PlacedObjectsManager.StringField(MKeys.inputA, "default_circuit", "Input"),
+                new PlacedObjectsManager.EnumField(MKeys.logicOp, typeof(LogicGate_OneInput.Op), LogicGate_OneInput.Op.NOT,
+                        control: PlacedObjectsManager.ManagedFieldWithPanel.ControlType.arrows, displayName: "Operator"),
+                new PlacedObjectsManager.StringField(MKeys.output, "default_circuit", "Output"),
+                new ComponentActivityField(MKeys.activated, false)
+            };
+            PlacedObjectsManager.RegisterFullyManagedObjectType(fields.ToArray(), typeof(LogicGate_OneInput), "Circuit_LogicGate_1");
+
             objectsSetUp = true;
         }
         private static bool objectsSetUp = false;
@@ -85,9 +107,6 @@ namespace RegionKit.Circuits
                 case BaseComponent.Type.Output:
                     circuits[circuitID].outputComponents.Add(component);
                     break;
-                case BaseComponent.Type.LogicGate:
-                    circuits[circuitID].logicComponents.Add(component);
-                    break;
             }
         }
 
@@ -108,9 +127,6 @@ namespace RegionKit.Circuits
                 case BaseComponent.Type.Output:
                     circuits[circuitID].outputComponents.Remove(component);
                     break;
-                case BaseComponent.Type.LogicGate:
-                    circuits[circuitID].logicComponents.Remove(component);
-                    break;
             }
         }
 
@@ -125,6 +141,17 @@ namespace RegionKit.Circuits
                 component.Deactivate();
             }
             AddComponent(newID, component);
+        }
+
+        bool TryGetCircuit(string id, out Circuit circuit)
+        {
+            if (circuits.TryGetValue(id, out Circuit c))
+            {
+                circuit = c;
+                return true;
+            }
+            circuit = null;
+            return false;
         }
 
         private class ComponentActivityField : PlacedObjectsManager.BooleanField
@@ -145,56 +172,78 @@ namespace RegionKit.Circuits
             public string ID { get; private set; }
             public List<BaseComponent> inputComponents = new List<BaseComponent>();
             public List<BaseComponent> outputComponents = new List<BaseComponent>();
-            public List<BaseComponent> logicComponents = new List<BaseComponent>();
 
             public bool IsEmpty =>
                 inputComponents.Count == 0 &&
-                outputComponents.Count == 0 &&
-                logicComponents.Count == 0;
+                outputComponents.Count == 0;
 
             bool hadPowerLastUpdate = false;
+            public bool HasPower { get; private set; }
 
             public void Update()
             {
-                bool hasPower = false;
+                HasPower = false;
 
-                foreach (BaseComponent c in inputComponents)
+                UpdateLogicGates();
+
+                foreach (BaseComponent comp in inputComponents)
                 {
-                    PlacedObjectsManager.ManagedData data = (c.pObj.data as PlacedObjectsManager.ManagedData);
-                    if (data != null && data.GetValue<bool>(MKeys.activated))
+                    PlacedObjectsManager.ManagedData data = comp.pObj.data as PlacedObjectsManager.ManagedData;
+                    if (data == null) continue;
+
+                    if (comp is LogicGate gate && gate.Output)
                     {
-                        hasPower = true;
+                        HasPower = true;
+                        break;
+                    }
+                    else if (comp.InType != BaseComponent.InputType.LogicGate && data.GetValue<bool>(MKeys.activated))
+                    {
+                        HasPower = true;
                         break;
                     }
                 }
 
                 // activate/deactivate output and logic components *only if necessary*
-                bool powerChanged = hasPower != hadPowerLastUpdate;
+                bool powerChanged = HasPower != hadPowerLastUpdate;
                 if (!powerChanged) return;
 
-                if (hasPower)
+                if (HasPower)
                 {
-                    foreach (BaseComponent c in outputComponents)
+                    foreach (BaseComponent comp in outputComponents)
                     {
-                        c.Activate();
-                    }
-                    foreach (BaseComponent c in logicComponents)
-                    {
-                        c.Activate();
+                        comp.Activate();
                     }
                     hadPowerLastUpdate = true;
                 }
                 else
                 {
-                    foreach (BaseComponent c in outputComponents)
+                    foreach (BaseComponent comp in outputComponents)
                     {
-                        c.Deactivate();
-                    }
-                    foreach (BaseComponent c in logicComponents)
-                    {
-                        c.Deactivate();
+                        comp.Deactivate();
                     }
                     hadPowerLastUpdate = false;
+                }
+            }
+
+            void UpdateLogicGates()
+            {
+                foreach (BaseComponent comp in inputComponents)
+                {
+                    if (!(comp is LogicGate gate)) continue;
+
+                    // pass power status of input circuits to the logic gate
+                    string[] inputIDs = gate.GetInputIDs();
+                    bool[] inputs = new bool[inputIDs.Length];
+                    for (int i = 0; i < inputIDs.Length; i++)
+                    {
+                        if (Instance.TryGetCircuit(inputIDs[i], out Circuit c))
+                        {
+                            inputs[i] = c.HasPower;
+                        }
+                    }
+
+                    // this will affect gate.Output, which will be read next Circuit.Update
+                    gate.SetInputs(inputs);
                 }
             }
 
@@ -206,10 +255,6 @@ namespace RegionKit.Circuits
                     (c.pObj.data as PlacedObjectsManager.ManagedData).SetValue(MKeys.activated, false);
                 }
                 foreach (BaseComponent c in outputComponents)
-                {
-                    c.Deactivate();
-                }
-                foreach (BaseComponent c in logicComponents)
                 {
                     c.Deactivate();
                 }
