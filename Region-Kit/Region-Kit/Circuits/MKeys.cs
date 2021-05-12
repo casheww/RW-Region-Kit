@@ -22,11 +22,13 @@ namespace RegionKit.Circuits
         public const string green = "green";
         public const string blue = "blue";
 
-        // logic gate enum
+        // logic gates & flip flops
         public const string logicOp = "logic";
         public const string inputA = "l_inputA";
         public const string inputB = "l_inputB";
+        public const string inputClock = "l_inputC";
         public const string output = "l_output";
+        public const string flipFlop = "ff_type";
 
         // clock
         public const string clockOnMax = "clock_on_max";

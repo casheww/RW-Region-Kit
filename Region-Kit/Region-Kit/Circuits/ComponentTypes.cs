@@ -13,6 +13,8 @@ namespace RegionKit.Circuits
         Button,
         Switch,
         LogicGate,
-        Clock
+        Clock,
+        FlipFlop
     }
+
 }

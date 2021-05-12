@@ -1,5 +1,4 @@
-﻿using ManagedPlacedObjects;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace RegionKit.Circuits
 {
@@ -15,23 +14,21 @@ namespace RegionKit.Circuits
 
         public override void Update(bool eu)
         {
-            PlacedObjectsManager.ManagedData data = pObj.data as PlacedObjectsManager.ManagedData;
+            light.color = CalculateColor();
 
-            light.color = CalculateColor(data);
+            light.setAlpha = Activated ? NoisifyAlpha(Data.GetValue<float>(MKeys.flicker)) : 0;
 
-            light.setAlpha = Activated ? NoisifyAlpha(data.GetValue<float>(MKeys.flicker)) : 0;
-
-            light.setRad = data.GetValue<float>(MKeys.strength) * maxStrengthTileCount * 20;
+            light.setRad = Data.GetValue<float>(MKeys.strength) * maxStrengthTileCount * 20;
 
             light.setPos = pObj.pos;
             base.Update(eu);
         }
 
-        Color CalculateColor(PlacedObjectsManager.ManagedData data)
+        Color CalculateColor()
         {
-            int r = data.GetValue<int>(MKeys.red);
-            int g = data.GetValue<int>(MKeys.green);
-            int b = data.GetValue<int>(MKeys.blue);
+            int r = Data.GetValue<int>(MKeys.red);
+            int g = Data.GetValue<int>(MKeys.green);
+            int b = Data.GetValue<int>(MKeys.blue);
 
             return new Color(r / 255f, g / 255f, b / 255f);
         }

@@ -16,6 +16,7 @@ namespace RegionKit.Circuits
             Instance = this;
 
             if (!objectsSetUp) SetupObjects();
+            if (!hooked) ApplyHooks();
         }
 
         public void Update()
@@ -38,21 +39,24 @@ namespace RegionKit.Circuits
             {
                 circuits.Remove(id);
             }
+
+            UpdateComponentAllegiance();
         }
 
         /// <summary>
-        /// Handles registration for fully managed managed objects in henpemaz's framework
+        /// Handles registration for fully managed managed objects in henpemaz's framework - <see cref="PlacedObjectsManager"/>
         /// </summary>
         private static void SetupObjects()
         {
             // basic components
             List<PlacedObjectsManager.ManagedField> fields = new List<PlacedObjectsManager.ManagedField>()
             {
-                new PlacedObjectsManager.StringField(MKeys.circuitID, "default_circuit", "Circuit ID"),
+                new PlacedObjectsManager.StringField(MKeys.circuitID, "default", "Circuit ID"),
                 new ComponentActivityField(MKeys.activated, false)
             };
             PlacedObjectsManager.RegisterFullyManagedObjectType(fields.ToArray(), typeof(Button), "Circuit_Button");
             PlacedObjectsManager.RegisterFullyManagedObjectType(fields.ToArray(), typeof(Switch), "Circuit_Switch");
+
 
             // components with colours and other funky stuff
             fields.AddRange(new PlacedObjectsManager.ManagedField[]
@@ -68,33 +72,36 @@ namespace RegionKit.Circuits
             });
             PlacedObjectsManager.RegisterFullyManagedObjectType(fields.ToArray(), typeof(BasicLight), "Circuit_BasicLight");
 
+
             // logic gates with 2 inputs
             fields = new List<PlacedObjectsManager.ManagedField>()
             {
-                new PlacedObjectsManager.StringField(MKeys.inputA, "default_circuit", "Input A"),
-                new PlacedObjectsManager.StringField(MKeys.inputB, "default_circuit", "Input B"),
+                new PlacedObjectsManager.StringField(MKeys.inputA, "defaultA", "Input A"),
+                new PlacedObjectsManager.StringField(MKeys.inputB, "defaultB", "Input B"),
                 new PlacedObjectsManager.EnumField(MKeys.logicOp, typeof(LogicGate_TwoInputs.Op), LogicGate_TwoInputs.Op.AND,
                         control: PlacedObjectsManager.ManagedFieldWithPanel.ControlType.arrows, displayName: "Operator"),
-                new PlacedObjectsManager.StringField(MKeys.output, "default_circuit", "Output"),
+                new PlacedObjectsManager.StringField(MKeys.output, "defaultOUT", "Output"),
                 new ComponentActivityField(MKeys.activated, false)
             };
             PlacedObjectsManager.RegisterFullyManagedObjectType(fields.ToArray(), typeof(LogicGate_TwoInputs), "Circuit_LogicGate_2");
 
+
             // logic gates with a single input
             fields = new List<PlacedObjectsManager.ManagedField>()
             {
-                new PlacedObjectsManager.StringField(MKeys.inputA, "default_circuit", "Input"),
+                new PlacedObjectsManager.StringField(MKeys.inputA, "default", "Input"),
                 new PlacedObjectsManager.EnumField(MKeys.logicOp, typeof(LogicGate_OneInput.Op), LogicGate_OneInput.Op.NOT,
                         control: PlacedObjectsManager.ManagedFieldWithPanel.ControlType.arrows, displayName: "Operator"),
-                new PlacedObjectsManager.StringField(MKeys.output, "default_circuit", "Output"),
+                new PlacedObjectsManager.StringField(MKeys.output, "defaultOUT", "Output"),
                 new ComponentActivityField(MKeys.activated, false)
             };
             PlacedObjectsManager.RegisterFullyManagedObjectType(fields.ToArray(), typeof(LogicGate_OneInput), "Circuit_LogicGate_1");
 
+
             // clock pulse generator
             fields = new List<PlacedObjectsManager.ManagedField>()
             {
-                new PlacedObjectsManager.StringField(MKeys.circuitID, "default_circuit", "Circuit ID"),
+                new PlacedObjectsManager.StringField(MKeys.circuitID, "default", "Circuit ID"),
                 new ComponentActivityField(MKeys.activated, false),
                 new PlacedObjectsManager.IntegerField(MKeys.clockOnMax, 10, 600, 60,
                         PlacedObjectsManager.ManagedFieldWithPanel.ControlType.text, "On-frames"),
@@ -103,14 +110,81 @@ namespace RegionKit.Circuits
             };
             PlacedObjectsManager.RegisterFullyManagedObjectType(fields.ToArray(), typeof(Clock), "Circuit_Clock");
 
+
+            // flip flops
+            fields = new List<PlacedObjectsManager.ManagedField>()
+            {
+                new PlacedObjectsManager.StringField(MKeys.inputA, "defaultD", "D"),
+                new PlacedObjectsManager.StringField(MKeys.inputClock, "clock", "Clock"),
+                new PlacedObjectsManager.StringField(MKeys.output, "defaultQ", "Q"),
+            };
+            PlacedObjectsManager.RegisterFullyManagedObjectType(fields.ToArray(), typeof(FlipFlop), "Circuit_D_FlipFlop");
+
+            fields[0] = new PlacedObjectsManager.StringField(MKeys.inputA, "defaultT", "T");
+            PlacedObjectsManager.RegisterFullyManagedObjectType(fields.ToArray(), typeof(FlipFlop), "Circuit_T_FlipFlop");
+
+            fields[0] = new PlacedObjectsManager.StringField(MKeys.inputA, "defaultJ", "J");
+            fields.Insert(1, new PlacedObjectsManager.StringField(MKeys.inputB, "defaultK", "K"));
+            PlacedObjectsManager.RegisterFullyManagedObjectType(fields.ToArray(), typeof(FlipFlop), "Circuit_JK_FlipFlop");
+
             objectsSetUp = true;
         }
         private static bool objectsSetUp = false;
 
+        #region hooks
+
+        private static void ApplyHooks()
+        {
+            On.Room.AddObject += Room_AddObject;
+            On.DevInterface.ObjectsPage.RemoveObject += ObjectsPage_RemoveObject;
+            hooked = true;
+        }
+        private static bool hooked = false;
+
+        private static void Room_AddObject(On.Room.orig_AddObject orig, Room self, UpdatableAndDeletable obj)
+        {
+            orig(self, obj);
+
+            if (obj is ICircuitComponent comp)
+            {
+                foreach (Circuit c in Instance.circuits.Values)
+                {
+                    foreach (ICircuitComponent otherComp in c.AllComponents)
+                    {
+                        // remove duplicated of the new object from previous loads of the room
+                        if (comp.Data.owner.pos == otherComp.Data.owner.pos
+                            && comp.GetType() == otherComp.GetType())
+                        {
+                            Instance.RemoveComponent(otherComp.CurrentCircuitID, otherComp);
+                        }
+                    }
+                }
+
+                Instance.AddComponent(comp.CurrentCircuitID, comp);
+            }
+        }
+
+        private static void ObjectsPage_RemoveObject(On.DevInterface.ObjectsPage.orig_RemoveObject orig,
+                DevInterface.ObjectsPage self, DevInterface.PlacedObjectRepresentation objRep)
+        {
+            foreach (Circuit c in Instance.circuits.Values)
+            {
+                foreach (ICircuitComponent comp in c.AllComponents)
+                {
+                    if (comp.Data.owner == objRep.pObj)
+                    {
+                        Instance.RemoveComponent(comp.LastCircuitID, comp);
+                    }
+                }
+            }
+
+            orig(self, objRep);
+        }
+
+        #endregion hooks
+
         public void AddComponent(string circuitID, ICircuitComponent component)
         {
-            Debug.Log($"adding component {component} to {circuitID}");
-
             if (!circuits.ContainsKey(circuitID))
             {
                 circuits[circuitID] = new Circuit(circuitID);
@@ -125,39 +199,73 @@ namespace RegionKit.Circuits
                     circuits[circuitID].outputComponents.Add(component);
                     break;
             }
+
+            component.LastCircuitID = circuitID;
+            Debug.Log($"added component {component} to {circuitID}");
         }
 
-        public void RemoveComponent(string circuitID, ICircuitComponent component)
+        public bool RemoveComponent(string circuitID, ICircuitComponent component)
         {
-            Debug.Log($"removing component {component} from {circuitID}");
+            if (!circuits.ContainsKey(circuitID)) return false;
 
-            if (!circuits.ContainsKey(circuitID))
-            {
-                circuits[circuitID] = new Circuit(circuitID);
-            }
-
+            bool success = false;
             switch (component.Type)
             {
                 case CompType.Input:
-                    circuits[circuitID].inputComponents.Remove(component);
+                    success = circuits[circuitID].inputComponents.Remove(component);
                     break;
                 case CompType.Output:
-                    circuits[circuitID].outputComponents.Remove(component);
+                    success = circuits[circuitID].outputComponents.Remove(component);
                     break;
+            }
+
+            if (success) Debug.Log($"removed component {component} from {circuitID}");
+            return success;
+        }
+
+        /// <summary>
+        /// Checks whether a component's current circuit ID has changed.
+        /// If it has changed, then the component is migrated to the new circuit.
+        /// </summary>
+        void UpdateComponentAllegiance()
+        {
+            List<ICircuitComponent> componentsToMigrate = new List<ICircuitComponent>();
+
+            foreach (Circuit c in circuits.Values)
+            {
+                foreach (ICircuitComponent comp in c.AllComponents)
+                {
+                    if (comp.LastCircuitID != comp.CurrentCircuitID)
+                    {
+                        componentsToMigrate.Add(comp);
+                    }
+                }
+            }
+
+            foreach (ICircuitComponent comp in componentsToMigrate)
+            {
+                Instance.MigrateComponent(comp);
+                comp.LastCircuitID = comp.CurrentCircuitID;
             }
         }
 
-        public void MigrateComponent(string oldID, string newID, ICircuitComponent component)
+        public void MigrateComponent(ICircuitComponent component)
         {
-            if (oldID != null)
+            if (component.LastCircuitID != null)
             {
-                RemoveComponent(oldID, component);
+                RemoveComponent(component.LastCircuitID, component);
             }
+
             if (component.Type == CompType.Output)
             {
                 component.Activated = false;
             }
-            AddComponent(newID, component);
+            else if (component is FlipFlop ff)
+            {
+                ff.Clear();
+            }
+
+            AddComponent(component.CurrentCircuitID, component);
         }
 
         /// <summary>
@@ -178,26 +286,35 @@ namespace RegionKit.Circuits
 
         /// <summary>
         /// A Managed bool field for henpemaz's framework that has no representation.
-        /// Used for the `actiavted` field of circuit components.
+        /// Designed to store component activity for <see cref="ICircuitComponent.Activated"/>.
         /// </summary>
         private class ComponentActivityField : PlacedObjectsManager.BooleanField
         {
-            public ComponentActivityField(string key, bool defaultValue) : base(key, defaultValue)
-            { }
+            public ComponentActivityField(string key, bool defaultValue) : base(key, defaultValue) { }
 
             public override bool NeedsControlPanel => false;    // no representation
         }
 
         class Circuit
         {
-            public Circuit(string ID)
+            public Circuit(string id)
             {
-                this.ID = ID;
+                this.id = id;
             }
 
-            public string ID { get; private set; }
+            public readonly string id;
             public List<ICircuitComponent> inputComponents = new List<ICircuitComponent>();
             public List<ICircuitComponent> outputComponents = new List<ICircuitComponent>();
+
+            public List<ICircuitComponent> AllComponents
+            {
+                get
+                {
+                    List<ICircuitComponent> components = new List<ICircuitComponent>(inputComponents);
+                    components.AddRange(outputComponents);
+                    return components;
+                }
+            }
 
             public bool IsEmpty =>
                 inputComponents.Count == 0 &&
@@ -211,15 +328,16 @@ namespace RegionKit.Circuits
                 HasPower = false;
 
                 UpdateLogicGates();
+                UpdateFlipFlops();
 
                 foreach (ICircuitComponent comp in inputComponents)
                 {
-                    if (comp is LogicGate gate && gate.Output)
+                    if ((comp is LogicGate gate && gate.Output) || (comp is FlipFlop ff && ff.Output))
                     {
                         HasPower = true;
                         break;
                     }
-                    else if (comp.InType != InputType.LogicGate && comp.Activated)
+                    else if (comp.InType != InputType.LogicGate && comp.InType != InputType.FlipFlop && comp.Activated)
                     {
                         HasPower = true;
                         break;
@@ -229,6 +347,8 @@ namespace RegionKit.Circuits
                 // activate/deactivate output and logic components *only if necessary*
                 bool powerChanged = HasPower != hadPowerLastUpdate;
                 if (!powerChanged) return;
+
+                Debug.Log($"{id} set to {HasPower}");
 
                 if (HasPower)
                 {
@@ -252,36 +372,57 @@ namespace RegionKit.Circuits
             {
                 foreach (ICircuitComponent comp in inputComponents)
                 {
-                    if (!(comp is LogicGate gate)) continue;
-
-                    // pass power status of input circuits to the logic gate
-                    string[] inputIDs = gate.GetInputIDs();
-                    bool[] inputs = new bool[inputIDs.Length];
-                    for (int i = 0; i < inputIDs.Length; i++)
+                    if (comp is LogicGate gate)
                     {
-                        if (Instance.TryGetCircuit(inputIDs[i], out Circuit c))
+                        // pass power status of input circuits to the logic gate
+                        string[] inputIDs = gate.GetInputIDs();
+                        bool[] inputs = new bool[inputIDs.Length];
+                        for (int i = 0; i < inputIDs.Length; i++)
                         {
-                            inputs[i] = c.HasPower;
+                            if (Instance.TryGetCircuit(inputIDs[i], out Circuit c))
+                            {
+                                inputs[i] = c.HasPower;
+                            }
+                            else inputs[i] = false;
                         }
-                    }
 
-                    // this will affect gate.Output, which will be read next Circuit.Update
-                    gate.SetInputs(inputs);
+                        // this will affect gate.Output, which will be read next Circuit.Update
+                        gate.SetInputs(inputs);
+                    }               
                 }
             }
 
-            public void ForceReset()
+            void UpdateFlipFlops()
             {
-                // just in case...
-                foreach (ICircuitComponent c in inputComponents)
+                foreach (ICircuitComponent comp in inputComponents)
                 {
-                    c.Activated = false;
+                    if (comp is FlipFlop fflop)
+                    {
+                        Dictionary<string, string> inputIDs = fflop.GetInputIDs();
+                        Dictionary<string, bool> inputs = new Dictionary<string, bool>();
+                        foreach (KeyValuePair<string, string> pair in inputIDs)
+                        {
+                            // pair.Key is input label ("D") and pair.Value is circuit ID ("default_circuit")
+                            if (Instance.TryGetCircuit(pair.Value, out Circuit c))
+                            {
+                                inputs[pair.Key] = c.HasPower;
+                            }
+                            else inputs[pair.Key] = false;
+                        }
+
+                        fflop.SetInputs(inputs);
+                    }
                 }
-                foreach (BaseComponent c in outputComponents)
+            }
+
+            public void ClearPower()
+            {
+                foreach (ICircuitComponent comp in outputComponents)
                 {
-                    c.Activated = false;
+                    comp.Activated = false;
                 }
                 hadPowerLastUpdate = false;
+                Debug.Log($"circuit {id} was cleared of power");
             }
 
         }

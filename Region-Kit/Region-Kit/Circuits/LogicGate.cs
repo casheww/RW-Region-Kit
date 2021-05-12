@@ -1,10 +1,13 @@
-﻿using ManagedPlacedObjects;
-
+﻿
 namespace RegionKit.Circuits
 {
     abstract class LogicGate : BaseComponent
     {
-        public LogicGate(PlacedObject pObj, Room room) : base(pObj, room, CompType.Input, InputType.LogicGate) { }
+        public LogicGate(PlacedObject pObj, Room room) : base(pObj, room, CompType.Input, InputType.LogicGate)
+        {
+            // logic gates should always start off
+            _data.SetValue(MKeys.activated, false);
+        }
 
         public abstract void SetInputs(bool[] inputs);
         public abstract bool Output { get; }
@@ -13,8 +16,7 @@ namespace RegionKit.Circuits
 
     class LogicGate_TwoInputs : LogicGate
     {
-        public LogicGate_TwoInputs(PlacedObject pObj, Room room) : base(pObj, room)
-        { }
+        public LogicGate_TwoInputs(PlacedObject pObj, Room room) : base(pObj, room) { }
 
         bool a = false; bool b = false;     // inputs
 
@@ -31,7 +33,7 @@ namespace RegionKit.Circuits
         {
             get
             {
-                switch ((pObj.data as PlacedObjectsManager.ManagedData).GetValue<Op>(MKeys.logicOp))
+                switch (Data.GetValue<Op>(MKeys.logicOp))
                 {
                     default:
                     case Op.AND:
@@ -43,18 +45,17 @@ namespace RegionKit.Circuits
                     case Op.NOR:
                         return !(a || b);
                     case Op.XOR:
-                        return (a || b) && !(a && b);
+                        return a ^ b;
                 }
             }
         }
 
         public override string[] GetInputIDs()
         {
-            PlacedObjectsManager.ManagedData data = pObj.data as PlacedObjectsManager.ManagedData;
             return new string[]
             {
-                data.GetValue<string>(MKeys.inputA),
-                data.GetValue<string>(MKeys.inputB)
+                Data.GetValue<string>(MKeys.inputA),
+                Data.GetValue<string>(MKeys.inputB)
             };
         }
 
@@ -70,8 +71,7 @@ namespace RegionKit.Circuits
 
     class LogicGate_OneInput : LogicGate
     {
-        public LogicGate_OneInput(PlacedObject pObj, Room room) : base(pObj, room)
-        { }
+        public LogicGate_OneInput(PlacedObject pObj, Room room) : base(pObj, room) { }
 
         bool a = false;     // input
 
@@ -87,10 +87,10 @@ namespace RegionKit.Circuits
         {
             get
             {
-                switch ((pObj.data as PlacedObjectsManager.ManagedData).GetValue<Op>(MKeys.logicOp))
+                switch (Data.GetValue<Op>(MKeys.logicOp))
                 {
                     default:
-                    case Op.Relay:
+                    case Op.Buffer:
                         return a;
                     case Op.NOT:
                         return !a;
@@ -100,16 +100,15 @@ namespace RegionKit.Circuits
 
         public override string[] GetInputIDs()
         {
-            PlacedObjectsManager.ManagedData data = pObj.data as PlacedObjectsManager.ManagedData;
             return new string[]
             {
-                data.GetValue<string>(MKeys.inputA)
+                Data.GetValue<string>(MKeys.inputA)
             };
         }
 
         public enum Op
         {
-            Relay,
+            Buffer,
             NOT
         }
     }

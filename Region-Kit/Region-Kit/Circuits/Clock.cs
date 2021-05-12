@@ -1,5 +1,4 @@
-﻿using ManagedPlacedObjects;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace RegionKit.Circuits
 {
@@ -16,10 +15,8 @@ namespace RegionKit.Circuits
         {
             base.Update(eu);
 
-            PlacedObjectsManager.ManagedData data = pObj.data as PlacedObjectsManager.ManagedData;
-
-            counterOnMax = data.GetValue<int>(MKeys.clockOnMax);
-            counterOffMax = data.GetValue<int>(MKeys.clockOffMax);
+            counterOnMax = Data.GetValue<int>(MKeys.clockOnMax);
+            counterOffMax = Data.GetValue<int>(MKeys.clockOffMax);
 
             counter--;
             if (counter < -counterOffMax)

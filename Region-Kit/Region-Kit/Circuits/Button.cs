@@ -1,5 +1,4 @@
-﻿using ManagedPlacedObjects;
-using RWCustom;
+﻿using RWCustom;
 using UnityEngine;
 
 namespace RegionKit.Circuits
@@ -20,15 +19,13 @@ namespace RegionKit.Circuits
         {
             base.Update(eu);
 
-            PlacedObjectsManager.ManagedData data = pObj.data as PlacedObjectsManager.ManagedData;
-
-            if (data.GetValue<bool>(MKeys.activated))
+            if (Data.GetValue<bool>(MKeys.activated))
             {
                 counter--;
                 if (counter < 0)
                 {
                     Activated = false;
-                    Debug.Log($"button stopped powering {data.GetValue<string>(MKeys.circuitID)}");
+                    Debug.Log($"button stopped powering {Data.GetValue<string>(MKeys.circuitID)}");
                     counter = counterMax;
                 }
                 return;
@@ -44,7 +41,7 @@ namespace RegionKit.Circuits
                 if (Input.GetKey(KeyCode.D) && dist < activationRadius)
                 {
                     Activated = true;
-                    Debug.Log($"button started powering {data.GetValue<string>(MKeys.circuitID)}");
+                    Debug.Log($"button started powering {Data.GetValue<string>(MKeys.circuitID)}");
                 }
             }
         }
@@ -68,7 +65,7 @@ namespace RegionKit.Circuits
             sLeaser.sprites[1].scaleX = 10;
             sLeaser.sprites[1].scaleY = 8;
 
-            sLeaser.sprites[1].isVisible = (pObj.data as PlacedObjectsManager.ManagedData).GetValue<bool>(MKeys.activated);
+            sLeaser.sprites[1].isVisible = Data.GetValue<bool>(MKeys.activated);
 
             if (slatedForDeletetion || room != rCam.room)
             {

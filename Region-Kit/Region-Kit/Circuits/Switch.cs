@@ -1,5 +1,4 @@
-﻿using ManagedPlacedObjects;
-using RWCustom;
+﻿using RWCustom;
 using UnityEngine;
 
 namespace RegionKit.Circuits
@@ -15,8 +14,6 @@ namespace RegionKit.Circuits
         {
             base.Update(eu);
             
-            PlacedObjectsManager.ManagedData data = pObj.data as PlacedObjectsManager.ManagedData;
-
             foreach (AbstractCreature aCreature in room.game.Players)
             {
                 IntVector2 coordInRoom = new IntVector2((int)pObj.pos.x / 20, (int)pObj.pos.y / 20);
@@ -27,7 +24,7 @@ namespace RegionKit.Circuits
                 if (Input.GetKeyDown(KeyCode.D) && dist < activationRadius)
                 {
                     Activated = !Activated;
-                    Debug.Log($"toggled power to circuit {data.GetValue<string>(MKeys.circuitID)} {(Activated ? "on" : "off")}");
+                    Debug.Log($"toggled power to circuit {Data.GetValue<string>(MKeys.circuitID)} {(Activated ? "on" : "off")}");
                 }
             }
         }
@@ -60,7 +57,7 @@ namespace RegionKit.Circuits
             sLeaser.sprites[2].scaleX = 10;
             sLeaser.sprites[2].scaleY = 8;
 
-            sLeaser.sprites[1].isVisible = (pObj.data as PlacedObjectsManager.ManagedData).GetValue<bool>(MKeys.activated);
+            sLeaser.sprites[1].isVisible = Data.GetValue<bool>(MKeys.activated);
 
             if (slatedForDeletetion || room != rCam.room)
             {
