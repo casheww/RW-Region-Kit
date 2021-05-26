@@ -17,6 +17,7 @@ namespace RegionKit.Circuits
 
         // lights and colour
         public const string flicker = "flicker";
+        public const string sine = "sine";
         public const string strength = "strength";
         public const string red = "red";
         public const string green = "green";

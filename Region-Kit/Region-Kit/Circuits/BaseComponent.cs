@@ -22,8 +22,6 @@ namespace RegionKit.Circuits
             {
                 _data.SetValue(MKeys.activated, false);
             }
-
-            Debug.Log($"created circuits component ({GetType()})");
         }
 
         public readonly PlacedObject pObj;

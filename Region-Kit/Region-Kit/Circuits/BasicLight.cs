@@ -16,7 +16,9 @@ namespace RegionKit.Circuits
         {
             light.color = CalculateColor();
 
-            light.setAlpha = Activated ? NoisifyAlpha(Data.GetValue<float>(MKeys.flicker)) : 0;
+            float s = Data.GetValue<float>(MKeys.sine);
+            float f = Data.GetValue<float>(MKeys.flicker);
+            light.setAlpha = Activated ? NoisifyAlpha(s, f) : 0;
 
             light.setRad = Data.GetValue<float>(MKeys.strength) * maxStrengthTileCount * 20;
 
@@ -33,35 +35,102 @@ namespace RegionKit.Circuits
             return new Color(r / 255f, g / 255f, b / 255f);
         }
 
-        float NoisifyAlpha(float flicker)
+        float NoisifyAlpha(float sineVal, float flickerVal)
         {
             float _alpha = baseAlpha;
 
-            flickerWait--;
-            if (flickerWait < -8)
-            {
-                flickerWait = (int)Mathf.Lerp(10, 120, Random.value);
-            }
+            DoSineNoise(sineVal, ref _alpha);           // apply sine noise to alpha
+            DoLargeFlickers(flickerVal, ref _alpha);    // larger brightness disruption
 
-            float clampedFlicker = Mathf.Clamp(flicker, 0.05f, 1f);
-            if (xForSin > 2 * Mathf.PI) xForSin = 0;
-            else xForSin += Mathf.PI / (clampedFlicker * baseSinWavelength / 2) + (Random.Range(-10, 10) / 10);
-
-            if (flickerWait <= 0)
-            {
-                _alpha *= Mathf.Pow(flickerRatio, 10 + flickerWait);
-            }
-
-            float sinMod = Mathf.Sin(xForSin) * 0.05f;
-            return Mathf.Clamp01(_alpha + sinMod);
+            return _alpha;
         }
 
-        const int maxStrengthTileCount = 30;
-        int flickerWait = 100;
+        void DoSineNoise(float rate, ref float _alpha)
+        {
+            if (arcsin >= _2pi) arcsin = 0;                         // reset sine position
+            else arcsin += _2pi * rate * sineRateMultiplier;        // progress along wavelength
+
+            float sinMod = Mathf.Sin(arcsin) * 0.1f;
+
+            _alpha = Mathf.Clamp01(_alpha + sinMod);
+        }
+
+        void DoLargeFlickers(float flicker, ref float _alpha)
+        {
+            if (flicker == 0) return;
+
+            flickerCounter++;
+
+            switch (state)
+            {
+                case LightState.TurningOff:
+                case LightState.Off:
+                    _alpha = 0;
+                    break;
+
+                case LightState.TurningOn:
+                    _alpha *= Mathf.Sin((Mathf.PI / (2 * stateFrames)) * (flickerCounter - 1));
+                    break;
+            }
+
+            if (flickerCounter >= stateFrames)
+            {
+                // move to next state
+                state++;
+                if ((int)state > 3) state = 0;
+
+                float rFlicker = Random.value * Random.value * flicker * flicker;
+
+                // set new frame limit for the current state iteration
+                switch (state)
+                {
+                    case LightState.On:
+                        stateFrames = Mathf.RoundToInt(Mathf.Lerp(onMax, onMin, rFlicker));
+                        break;
+
+                    case LightState.TurningOff:
+                        stateFrames = changeOff;
+                        break;
+
+                    case LightState.Off:
+                        stateFrames = Mathf.RoundToInt(Mathf.Lerp(offMin, offMax, rFlicker));
+                        break;
+
+                    case LightState.TurningOn:
+                        stateFrames = changeOn;
+                        break;
+                }
+
+                flickerCounter = 0;
+            }
+        }
+
+        const int maxStrengthTileCount = 32;
         const float baseAlpha = 0.9f;
-        const float flickerRatio = 0.8f;
-        const int baseSinWavelength = 20;
-        float xForSin = 2 * Mathf.PI * Random.value;
+
+        const float sineRateMultiplier = 0.05f;     // used to slow the rate of the sine noise cycle
+        const float _2pi = 2 * Mathf.PI;
+
+        const int onMin = 0;
+        const int onMax = 256;
+        const int offMin = 0;
+        const int offMax = 128;
+        const int changeOn = 8;
+        const int changeOff = 2;
+
+        int flickerCounter = 0;
+        int stateFrames = -1;
+        float arcsin = 0;           // for tracking the position along in the sine noise cycle
+
+
+        LightState state = LightState.On;
+        enum LightState
+        {
+            On,
+            TurningOff,
+            Off,
+            TurningOn
+        }
 
     }
 }

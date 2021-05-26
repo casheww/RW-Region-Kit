@@ -61,7 +61,8 @@ namespace RegionKit.Circuits
             // components with colours and other funky stuff
             fields.AddRange(new PlacedObjectsManager.ManagedField[]
             {
-                new PlacedObjectsManager.FloatField(MKeys.flicker, 0, 1, 0.4f, 0.05f, displayName: "Flicker"),
+                new PlacedObjectsManager.FloatField(MKeys.sine, 0, 1, 0.4f, 0.05f, displayName: "Sine noise"),
+                new PlacedObjectsManager.FloatField(MKeys.flicker, 0, 1, 0.2f, 0.05f, displayName: "Flicker"),
                 new PlacedObjectsManager.FloatField(MKeys.strength, 0, 1, 0.7f, 0.05f, displayName: "Strength"),
                 new PlacedObjectsManager.IntegerField(MKeys.red, 0, 255, 80,
                         PlacedObjectsManager.ManagedFieldWithPanel.ControlType.slider, "Red"),
@@ -347,8 +348,6 @@ namespace RegionKit.Circuits
                 // activate/deactivate output and logic components *only if necessary*
                 bool powerChanged = HasPower != hadPowerLastUpdate;
                 if (!powerChanged) return;
-
-                Debug.Log($"{id} set to {HasPower}");
 
                 if (HasPower)
                 {
