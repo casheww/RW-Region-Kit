@@ -18,13 +18,10 @@ namespace RegionKit {
         {
             base.OnEnable();
 
-            // create circuit controller
-            circuitController = circuitControllerGameObj.AddComponent<Circuits.CircuitController>();
-
             RoomLoader.Patch();
             BrokenPatch.Patch();
             CustomArenaDivisions.Patch();
-            CustomDevInterface.StringControl.Setup();
+            Circuits.Setup.Apply();
             //Add new things here - remember to add them to OnDisable() as well!
         }
 
@@ -32,12 +29,9 @@ namespace RegionKit {
         {
             base.OnDisable();
 
-            // destory the circuit controller object
-            Object.Destroy(circuitControllerGameObj.GetComponent<Circuits.CircuitController>());
-
             RoomLoader.Disable();
             BrokenPatch.Disable();
-            CustomDevInterface.StringControl.Disable();
+            Circuits.Setup.UnApply();
             //Add new things here- remember to add them to OnEnable() as well!
         }
 

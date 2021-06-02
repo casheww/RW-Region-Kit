@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace RegionKit.Circuits
 {
-    class Button : BaseComponent, IDrawable
+    class Button : BaseComponent
     {
         public Button(PlacedObject pObj, Room room) : base(pObj, room, CompType.Input, InputType.Button)
         {
@@ -15,10 +15,8 @@ namespace RegionKit.Circuits
         int counter;
         Color? onColour = null;
 
-        public override void Update(bool eu)
+        public void Update(bool eu)
         {
-            base.Update(eu);
-
             if (Data.GetValue<bool>(MKeys.activated))
             {
                 counter--;
@@ -46,6 +44,7 @@ namespace RegionKit.Circuits
             }
         }
 
+        /*
         public void DrawSprites(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, float timeStacker, Vector2 camPos)
         {
             if (onColour == null)
@@ -111,7 +110,7 @@ namespace RegionKit.Circuits
                 fsprite.RemoveFromContainer();
                 newContatiner.AddChild(fsprite);
             }
-        }
-    }
+        }*/
 
+    }
 }
