@@ -2,8 +2,42 @@
 
 namespace RegionKit.Circuits
 {
-    class Clock : BaseComponent, IDrawable
+    class Clock : AbstractBaseComponent
     {
+        public Clock(string pObjStr, string region, MObjSetup data)
+            : base(pObjStr, region, data, CompType.Input, InputType.Clock, "clock")
+        {
+            Data.TryGetFieldAndValue(MKeys.clockOnMax, out var _, out object v);
+            counterOnMax = (int)v;
+            Data.TryGetFieldAndValue(MKeys.clockOffMax, out var _, out v);
+            counterOffMax = (int)v;
+        }
+
+        public override void Update()
+        {
+            if (Realised)
+            {
+                counterOnMax = RealisedObj.Data.GetValue<int>(MKeys.clockOnMax);
+                counterOffMax = RealisedObj.Data.GetValue<int>(MKeys.clockOffMax);
+            }
+
+            counter--;
+            if (counter < -counterOffMax)
+            {
+                counter = counterOnMax;
+                Activated = true;
+            }
+            else if (counter == 0)
+            {
+                Activated = false;
+            }
+        }
+
+        int counterOnMax;   // abs of clock max
+        int counterOffMax;  // abs of clock min
+        int counter = 0;
+
+        /*
         public Clock(PlacedObject pObj, Room room) : base(pObj, room, CompType.Input, InputType.Clock) { }
 
         int counterOnMax;   // abs of clock max
@@ -84,7 +118,7 @@ namespace RegionKit.Circuits
                 fsprite.RemoveFromContainer();
                 newContatiner.AddChild(fsprite);
             }
-        }
+        }*/
 
     }
 }

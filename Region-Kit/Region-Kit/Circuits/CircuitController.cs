@@ -11,8 +11,8 @@ namespace RegionKit.Circuits
         {
             Instance = this;
 
-            circuits = Saver.LoadComponentConfig(world.game);
-            LoadComponentStates(circuits);
+            Saver.LoadComponentConfig(this, world.game);
+            Saver.LoadComponentStates(this, world.game);
         }
 
         public static CircuitController Instance { get; private set; }
@@ -48,7 +48,7 @@ namespace RegionKit.Circuits
             // only save every {saveInterval} updates and if components have been moved around
             if (componentsHaveChangedCircuit && saveCounter == saveInterval)
             {
-                Saver.SaveComponents(circuits);
+                Saver.SaveComponentConfig(this, world.game);
                 saveCounter = 0;
             }
             saveCounter++;
@@ -59,14 +59,14 @@ namespace RegionKit.Circuits
 
         #region ComponentManagement
 
-        public void AddComponent(string circuitID, ICircuitComponent component)
+        public void AddComponent(string circuitID, AbstractBaseComponent component)
         {
             if (!circuits.ContainsKey(circuitID))
             {
                 circuits[circuitID] = new Circuit(circuitID);
             }
 
-            switch (component.Type)
+            switch (component.CompType)
             {
                 case CompType.Input:
                     circuits[circuitID].inputComponents.Add(component);
@@ -80,12 +80,12 @@ namespace RegionKit.Circuits
             Log($"added component {component} to {circuitID}");
         }
 
-        public bool RemoveComponent(string circuitID, ICircuitComponent component)
+        public bool RemoveComponent(string circuitID, AbstractBaseComponent component)
         {
             if (!circuits.ContainsKey(circuitID)) return false;
 
             bool success = false;
-            switch (component.Type)
+            switch (component.CompType)
             {
                 case CompType.Input:
                     success = circuits[circuitID].inputComponents.Remove(component);
@@ -105,11 +105,11 @@ namespace RegionKit.Circuits
         /// </summary>
         void UpdateComponentAllegiance(out bool changesMade)
         {
-            List<ICircuitComponent> componentsToMigrate = new List<ICircuitComponent>();
+            List<AbstractBaseComponent> componentsToMigrate = new List<AbstractBaseComponent>();
 
             foreach (Circuit c in circuits.Values)
             {
-                foreach (ICircuitComponent comp in c.AllComponents)
+                foreach (AbstractBaseComponent comp in c.AllComponents)
                 {
                     if (comp.LastCircuitID != comp.CurrentCircuitID)
                     {
@@ -119,21 +119,21 @@ namespace RegionKit.Circuits
             }
 
             changesMade = componentsToMigrate.Count >= 1;
-            foreach (ICircuitComponent comp in componentsToMigrate)
+            foreach (AbstractBaseComponent comp in componentsToMigrate)
             {
                 Instance.MigrateComponent(comp);
                 comp.LastCircuitID = comp.CurrentCircuitID;
             }
         }
 
-        public void MigrateComponent(ICircuitComponent component)
+        public void MigrateComponent(AbstractBaseComponent component)
         {
             if (component.LastCircuitID != null)
             {
                 RemoveComponent(component.LastCircuitID, component);
             }
 
-            if (component.Type == CompType.Output)
+            if (component.CompType == CompType.Output)
             {
                 component.Activated = false;
             }
@@ -143,6 +143,48 @@ namespace RegionKit.Circuits
             }
 
             AddComponent(component.CurrentCircuitID, component);
+        }
+
+        /// <summary>
+        /// Finds an existing <see cref="AbstractBaseComponent"/> with the same settings and gives it to the realised object.
+        /// </summary>
+        /// <returns>Whether the request was successful.</returns>
+        public bool RequestMatchingAbstractComp(RealBaseComponent real)
+        {
+            if (!circuits.TryGetValue(real.CurrentCircuitID, out Circuit c)) return false;
+
+            foreach (AbstractBaseComponent abstractComp in c.AllComponents)
+            {
+                if (CheckAbstractToRealDataMatch(abstractComp, real))
+                {
+                    real.AbstractComp = abstractComp;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        bool CheckAbstractToRealDataMatch(AbstractBaseComponent _abstract, RealBaseComponent real)
+        {
+            if (_abstract.PObjTypeStr != real.PObj.type.ToString() && _abstract.Region != real.room.world.region.name)
+            {
+                return false;
+            }
+
+            // compare field values
+            foreach (string key in _abstract.Data.FieldsByKey.Keys)
+            {
+                if (!_abstract.Data.TryGetFieldAndValue(key, out PlacedObjectsManager.ManagedField _, out object absV))
+                    return false;
+
+                object realV = real.Data.GetValue<object>(key);
+
+                if (absV != realV) return false;
+            }
+
+            // all checks passed
+            return true;
         }
 
         #endregion ComponentManagement

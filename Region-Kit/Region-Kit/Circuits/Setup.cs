@@ -111,7 +111,7 @@ namespace RegionKit.Circuits
 
             foreach (MObjSetup s in mObjSetups)
             {
-                PlacedObjectsManager.RegisterFullyManagedObjectType(s.fields, s.type, s.name);
+                PlacedObjectsManager.RegisterFullyManagedObjectType(s.Fields, s.Type, s.Name);
             }
 
             objectsSetUp = true;
@@ -123,29 +123,15 @@ namespace RegionKit.Circuits
         {
             foreach (MObjSetup s in mObjSetups)
             {
-                if (s.name == name) return s;
+                if (s.Name == name) return s;
             }
             return null;
-        }
-
-        public struct MObjSetup
-        {
-            public MObjSetup(string name, System.Type type, PlacedObjectsManager.ManagedField[] fields)
-            {
-                this.name = name;
-                this.type = type;
-                this.fields = fields;
-            }
-
-            public string name;
-            public System.Type type;
-            public PlacedObjectsManager.ManagedField[] fields;
         }
 
 
         /// <summary>
         /// A Managed bool field for henpemaz's framework that has no representation.
-        /// Designed to store component activity for <see cref="ICircuitComponent.Activated"/>.
+        /// Designed to store component activity for <see cref="IAbstractCircuitComponent.Activated"/>.
         /// </summary>
         private class ComponentActivityField : PlacedObjectsManager.BooleanField
         {

@@ -12,14 +12,14 @@ namespace RegionKit.Circuits
             }
 
             public readonly string id;
-            public List<ICircuitComponent> inputComponents = new List<ICircuitComponent>();
-            public List<ICircuitComponent> outputComponents = new List<ICircuitComponent>();
+            public List<AbstractBaseComponent> inputComponents = new List<AbstractBaseComponent>();
+            public List<AbstractBaseComponent> outputComponents = new List<AbstractBaseComponent>();
 
-            public List<ICircuitComponent> AllComponents
+            public List<AbstractBaseComponent> AllComponents
             {
                 get
                 {
-                    List<ICircuitComponent> components = new List<ICircuitComponent>(inputComponents);
+                    List<AbstractBaseComponent> components = new List<AbstractBaseComponent>(inputComponents);
                     components.AddRange(outputComponents);
                     return components;
                 }
@@ -39,7 +39,7 @@ namespace RegionKit.Circuits
                 UpdateLogicGates();
                 UpdateFlipFlops();
 
-                foreach (ICircuitComponent comp in inputComponents)
+                foreach (AbstractBaseComponent comp in inputComponents)
                 {
                     if ((comp is LogicGate gate && gate.Output) || (comp is FlipFlop ff && ff.Output))
                     {
@@ -57,27 +57,16 @@ namespace RegionKit.Circuits
                 bool powerChanged = HasPower != hadPowerLastUpdate;
                 if (!powerChanged) return;
 
-                if (HasPower)
+                foreach (AbstractBaseComponent comp in outputComponents)
                 {
-                    foreach (ICircuitComponent comp in outputComponents)
-                    {
-                        comp.Activated = true;
-                    }
-                    hadPowerLastUpdate = true;
+                    comp.Activated = HasPower;
                 }
-                else
-                {
-                    foreach (ICircuitComponent comp in outputComponents)
-                    {
-                        comp.Activated = false;
-                    }
-                    hadPowerLastUpdate = false;
-                }
+                hadPowerLastUpdate = HasPower;
             }
 
             void UpdateLogicGates()
             {
-                foreach (ICircuitComponent comp in inputComponents)
+                foreach (AbstractBaseComponent comp in inputComponents)
                 {
                     if (comp is LogicGate gate)
                     {
@@ -101,7 +90,7 @@ namespace RegionKit.Circuits
 
             void UpdateFlipFlops()
             {
-                foreach (ICircuitComponent comp in inputComponents)
+                foreach (AbstractBaseComponent comp in inputComponents)
                 {
                     if (comp is FlipFlop fflop)
                     {

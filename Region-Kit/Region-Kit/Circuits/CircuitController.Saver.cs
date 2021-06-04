@@ -12,29 +12,33 @@ namespace RegionKit.Circuits
     {
         static class Saver
         {
-            const string crsDir = "Mods/CustomResources";
-            const string configFile = "circuit_config.txt";
+            const string savesDir = "Mods/RegionKit/Circuits";
+            // saves are in Mods/RegionKit/Circuits/<region-code>.txt
 
-            public static Dictionary<string, Circuit> LoadComponentConfig(RainWorldGame game)
+            public static void LoadComponentConfig(CircuitController cController, RainWorldGame game)
             {
-                if (!Directory.Exists(crsDir))
+                if (!Directory.Exists(savesDir))
                 {
-                    Log("./Mods/CustomResources not found! Are you sure you have CRS installed?", true, MethodBase.GetCurrentMethod());
-                    return null;
+                    Directory.CreateDirectory(savesDir);
+                    return;     // nothing to load
                 }
 
-                if (game.IsArenaSession) return null;       // TODO: add arena compat
+                if (game.IsArenaSession) return;        // skipping arena compat for now TODO
 
-                foreach (string regionPack in Directory.GetDirectories(crsDir))
+                foreach (string fp in Directory.GetFiles(savesDir))
                 {
-                    string p = Path.Combine(Path.Combine(crsDir, regionPack), configFile);
-                    if (!File.Exists(p)) continue;
+                    string[] raw = File.ReadAllLines(fp);
+                    Dictionary<string, Circuit> regionCircuits = DeserialiseComponentConfig(game, raw);
 
-                    string[] raw = File.ReadAllLines(p);
-                    Dictionary<string, Circuit> packCircuits = DeserialiseComponentConfig(raw);
+                    foreach (Circuit c in regionCircuits.Values)
+                    {
+                        foreach (AbstractBaseComponent comp in c.AllComponents)
+                        {
+                            cController.AddComponent(c.id, comp);
+                        }
+                    }
                 }
 
-                return dict;
             }
 
 
@@ -43,83 +47,95 @@ namespace RegionKit.Circuits
              * Basic structure:
              *   0: type name (Button)
              *   1: placed object type name (Circuit_Button)
-             *   2: position for component identification (as a Vector2)
+             *   2: region code
              *   3 onwards: determined by the setup registered with henpemaz's framework
              */
 
-            static Dictionary<string, Circuit> DeserialiseComponentConfig(string[] raw)
+            static Dictionary<string, Circuit> DeserialiseComponentConfig(RainWorldGame game, string[] raw)
             {
                 Dictionary<string, Circuit> dict = new Dictionary<string, Circuit>();
 
                 foreach (string l in raw)
                 {
+                    if (l == "") continue;
+
                     string[] lSplits = Regex.Split(l, @"(?<!\\)~");       // split at ~ but not \~
 
+                    // check that we have at least the class name and the pObj entry
                     if (lSplits.Length < 2)
                     {
                         Log($"too few fields found in {l}", true, MethodBase.GetCurrentMethod());
                         continue;
                     }
 
-                    Type type = Assembly.GetCallingAssembly().GetType("RegionKit.Circuits." + lSplits[0]);
+                    // get the type - will be used to instantiate
+                    Type type = Assembly.GetCallingAssembly().GetType(lSplits[0]);
                     if (type == null)
                     {
                         Log($"error parsing component type {lSplits[0]}", true, MethodBase.GetCurrentMethod());
                         continue;
                     }
 
-                    Setup.MObjSetup? managedSetup = Setup.GetManagedObjectSetup(lSplits[1]);
+                    // to get the managed field types and whatnot
+                    MObjSetup? managedSetup = Setup.GetManagedObjectSetup(lSplits[1]);
                     if (managedSetup == null)
                     {
                         Log($"error parsing component managed object type {lSplits[1]}", true, MethodBase.GetCurrentMethod());
                         continue;
                     }
 
-                    if (!TryParsePosition(lSplits[2], out UnityEngine.Vector2 pos))
+                    // check that region code corresponds to a region loaded by the game/CRS
+                    if (!game.overWorld.regions.Any(r => r.name == lSplits[2]))
                     {
-                        Log($"error parsing component position {lSplits[2]} for {lSplits[0]}", true, MethodBase.GetCurrentMethod());
+                        Log($"region {lSplits[2]} for component {lSplits[1]} is not loaded", true, MethodBase.GetCurrentMethod());
                         continue;
                     }
 
-                    PlacedObjectsManager.ManagedField[] fields = ((Setup.MObjSetup)managedSetup).fields;
+                    int fieldOffset = 3;
+
+                    // check that the number of fields in save matches the number of managed fields
+                    PlacedObjectsManager.ManagedField[] fields = ((MObjSetup)managedSetup).Fields;
                     if (lSplits.Length - fieldOffset != fields.Length)
                     {
                         Log($"incorrect number of fields in {l} for {lSplits[0]}", true, MethodBase.GetCurrentMethod());
                         continue;
                     }
 
-                    if (!TryParseFields(fields, lSplits, out object[] fieldValues))
+                    // parse the saved field values
+                    if (!TryParseFields(fields, lSplits, fieldOffset, out object[] fieldValues))
                     {
                         Log($"error parsing values in {l} for {lSplits[0]}", true, MethodBase.GetCurrentMethod());
                         continue;
                     }
+
+                    // instantiate
+                    object[] args = new object[]
+                    {
+                        lSplits[1], lSplits[2], fieldValues
+                    };
+                    AbstractBaseComponent newComponent = (AbstractBaseComponent)Activator.CreateInstance(type, args);
+
+                    // add the component to its circuit
+                    if (!dict.ContainsKey(newComponent.CurrentCircuitID))
+                    {
+                        dict[newComponent.CurrentCircuitID] = new Circuit(newComponent.CurrentCircuitID);
+                    }
+
+                    if (newComponent.CompType == CompType.Input)
+                    {
+                        dict[newComponent.CurrentCircuitID].inputComponents.Add(newComponent);
+                    }
+                    else
+                    {
+                        dict[newComponent.CurrentCircuitID].outputComponents.Add(newComponent);
+                    }
                     
-                    object newComponent = Activator.CreateInstance(type, fieldValues);  // TODO
                 }
 
-                // return dict;
-            }
-            const int fieldOffset = 2;
-
-            static bool TryParsePosition(string raw, out UnityEngine.Vector2 pos)
-            {
-                pos = UnityEngine.Vector2.zero;
-
-                string[] posParts = Regex.Split(raw, @"\^");
-                if (!float.TryParse(posParts[0], out float x))
-                {
-                    return false;
-                }
-                if (!float.TryParse(posParts[1], out float y))
-                {
-                    return false;
-                }
-
-                pos = new UnityEngine.Vector2(x, y);
-                return true;
+                return dict;
             }
 
-            static bool TryParseFields(PlacedObjectsManager.ManagedField[] fields, string[] lSplits, out object[] fieldValues)
+            static bool TryParseFields(PlacedObjectsManager.ManagedField[] fields, string[] lSplits, int fieldOffset, out object[] fieldValues)
             {
                 fieldValues = new object[fields.Length - fieldOffset];
                 bool parseSuccess = true;
@@ -148,24 +164,78 @@ namespace RegionKit.Circuits
                 return true;
             }
 
-
-            public static void SaveComponents(Dictionary<string, Circuit> circuits)
+            public static void SaveComponentConfig(CircuitController cController, RainWorldGame game)
             {
-                string saveData = MiniJsonExtensions.toJson(circuits.ToDictionary(kvp => kvp.Key, kvp => (object)kvp.Value));
+                if (game.IsArenaSession) return; // TODO ? arena support
 
-                Log($"saving {circuits.Count} things");
+                if (!Directory.Exists(savesDir)) Directory.CreateDirectory(savesDir);
 
-                File.WriteAllText(path, saveData);
+                Dictionary<string, List<AbstractBaseComponent>> compByRegionName = new Dictionary<string, List<AbstractBaseComponent>>();
+                foreach (Circuit c in cController.circuits.Values)
+                {
+                    foreach (AbstractBaseComponent comp in c.AllComponents)
+                    {
+                        if (!compByRegionName.ContainsKey(comp.Region))
+                        {
+                            compByRegionName[comp.Region] = new List<AbstractBaseComponent>();
+                        }
+
+                        compByRegionName[comp.Region].Add(comp);
+                    }
+                }
+
+                foreach (var pair in compByRegionName)
+                {
+                    string[] saveData = new string[pair.Value.Count];
+                    for (int i = 0; i < pair.Value.Count; i++)
+                    {
+                        saveData[i] = SerialiseComponentConfig(pair.Value[i]);
+                    }
+
+                    File.WriteAllLines(Path.Combine(savesDir, pair.Key + ".txt"), saveData);
+                }
             }
 
-            public static Dictionary<string, Circuit> LoadComponents()
+            public static string SerialiseComponentConfig(AbstractBaseComponent comp)
             {
-                Dictionary<string, object> dict = MiniJsonExtensions.dictionaryFromJson(File.ReadAllText(pathFile));
-                Log($"loading {dict.Count} things");
-                return dict.ToDictionary(kvp => kvp.Key, kvp => (Circuit)kvp.Value);
+                List<string> data = new List<string>();
+
+                data.Add(comp.GetType().ToString());
+                data.Add(comp.PObjTypeStr);
+                data.Add(comp.Region);
+
+                MObjSetup? nullableMObjSetup = Setup.GetManagedObjectSetup(comp.PObjTypeStr);
+                if (nullableMObjSetup == null)
+                {
+                    Log($"error finding managed object setup for {comp.PObjTypeStr}", true, MethodBase.GetCurrentMethod());
+                    return "";
+                }
+                MObjSetup mObjSetup = (MObjSetup)nullableMObjSetup;
+
+                foreach (string key in mObjSetup.FieldsByKey.Keys)
+                {
+                    mObjSetup.TryGetFieldAndValue(key, out PlacedObjectsManager.ManagedField f, out object v);
+                    data.Add(f.ToString(v));
+                }
+
+                data.ForEach(s => Regex.Replace(s, @"~", @"\~"));
+                return string.Join("~", data.ToArray());
+
+            }
+
+
+            public static void LoadComponentStates(CircuitController cController, RainWorldGame game)
+            {
+                if (game.IsArenaSession) return;    // TODO?
+
+                // placeholder
+                foreach (Circuit c in cController.circuits.Values)
+                {
+                    c.AllComponents.ForEach(comp => comp.Activated = false);
+                }
+
             }
 
         }
-
     }
 }

@@ -1,73 +1,41 @@
-﻿
+﻿using ManagedPlacedObjects;
+
 namespace RegionKit.Circuits
 {
     /// <summary>
-    /// An interface that all Circuits components should implement.<br/>
-    /// Circuit components are not the same as devtools-placeable room objects 
-    /// - they own a devtools-placeable room object, and the component behaviour is handled in an abstract way
-    /// by classes that implement this interface.<br/><br/>
-    /// If you don't need to inherit from another class, 
-    /// it's recommended to inherit from <see cref="BaseComponent"/> rather than implementing this interface.
+    /// Interface for the physical, realised part of a component.<br/>
+    /// If you have no reason to inherit from another class, inherit from <see cref="RealBaseComponent"/>
+    /// instead as it handles a lot of boring stuff for you. <br/>
+    /// Otherwise, any other <see cref="UpdatableAndDeletable"/> is okay if you implement this interface.
+    /// <br/><br/>
+    /// If you are still here, it's highly recommended that you use <see cref="RealBaseComponent"/> as a guide.
+    /// Heed its class summary.
     /// </summary>
-    public interface ICircuitComponent
+    interface ICircuitComponent
     {
         /// <summary>
-        /// Basic component type: input or output.<br/>
-        /// Logic gates and flipflops are treated as inputs (sorry) 
-        ///     - their role as the output of a circuit is handled by the <see cref="CircuitController_old"/>.
+        /// The <see cref="PlacedObject"/> corresponding to our object. 
+        /// Can be used to track position with <see cref="PlacedObject.pos"/>.
         /// </summary>
-        CompType Type { get; set; }
-
+        PlacedObject PObj { get; }
 
         /// <summary>
-        /// The type of input, like a button or switch.<br/>
-        /// Output components should have this set to <see cref="InputType.NotAnInput"/>.<br/>
-        /// See <see cref="BaseComponent.InType"/> for the recommended implementation.
+        /// Managed data from henpemaz's glorious framework - <seealso cref="ManagedPlacedObjects"/>.
         /// </summary>
-        InputType InType { get; }
-
+        PlacedObjectsManager.ManagedData Data { get; }
 
         /// <summary>
-        /// Whether or not the component is supplying power to a circuit or is being powered by a circuit.
-        /// To avoid components storing activity state that persists through room reloading, 
-        /// this should be set to false in your component's constructor.
-        /// See <see cref="BaseComponent(PlacedObject, Room, CompType, InputType)"/>.
+        /// The <see cref="AbstractBaseComponent"/> that handles the component logic.
+        /// </summary>
+        AbstractBaseComponent AbstractComp { get; set; }
+
+        /// <summary>
+        /// * Take a look at <see cref="RealBaseComponent.Update(bool)"/> and <see cref="RealBaseComponent.Activated"/>
+        /// for the recommended implementation.
         /// </summary>
         bool Activated { get; set; }
 
-
-        /// <summary>
-        /// ID of the circuit that the component currently belongs to.<br/>
-        /// See <see cref="BaseComponent.CurrentCircuitID"/> for the recommended implementation.
-        /// </summary>
         string CurrentCircuitID { get; }
 
-
-        /// <summary>
-        /// ID of the circuit that the component belonged to last update.<br/>
-        /// You shouldn't touch this - this is for the controller to deal with.
-        /// </summary>
-        string LastCircuitID { get; set; }
-
-
-        /// <summary>
-        /// ManagedData from henpemaz's managed object framework.<br/>
-        /// See <see cref="BaseComponent.Data"/> the recommended implementation.
-        /// </summary>
-        ManagedPlacedObjects.PlacedObjectsManager.ManagedData Data { get; }
-
-
-        /// <summary>
-        /// For component serialisation - must be undone by <see cref="FromString"/>
-        /// </summary>
-        string ToString();
-
-        /// <summary>
-        /// For component deserialisation - must be undone by <see cref="ToString"/>
-        /// </summary>
-        /// <returns></returns>
-        object FromString(string s);
-
     }
-
 }
