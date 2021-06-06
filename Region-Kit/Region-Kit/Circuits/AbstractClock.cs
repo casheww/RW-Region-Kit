@@ -1,10 +1,9 @@
-﻿using UnityEngine;
-
+﻿
 namespace RegionKit.Circuits
 {
-    class Clock : AbstractBaseComponent
+    class AbstractClock : AbstractBaseComponent
     {
-        public Clock(string pObjStr, string region, MObjSetup data)
+        public AbstractClock(string pObjStr, string region, MObjSetup data)
             : base(pObjStr, region, data, CompType.Input, InputType.Clock, "clock")
         {
             Data.TryGetFieldAndValue(MKeys.clockOnMax, out var _, out object v);

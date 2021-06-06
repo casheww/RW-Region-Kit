@@ -41,7 +41,7 @@ namespace RegionKit.Circuits
 
                 foreach (AbstractBaseComponent comp in inputComponents)
                 {
-                    if ((comp is LogicGate gate && gate.Output) || (comp is FlipFlop ff && ff.Output))
+                    if ((comp is AbstractLogicGate gate && gate.Output) || (comp is AbstractFlipFlop ff && ff.Output))
                     {
                         HasPower = true;
                         break;
@@ -68,7 +68,7 @@ namespace RegionKit.Circuits
             {
                 foreach (AbstractBaseComponent comp in inputComponents)
                 {
-                    if (comp is LogicGate gate)
+                    if (comp is AbstractLogicGate gate)
                     {
                         // pass power status of input circuits to the logic gate
                         string[] inputIDs = gate.GetInputIDs();
@@ -92,7 +92,7 @@ namespace RegionKit.Circuits
             {
                 foreach (AbstractBaseComponent comp in inputComponents)
                 {
-                    if (comp is FlipFlop fflop)
+                    if (comp is AbstractFlipFlop fflop)
                     {
                         Dictionary<string, string> inputIDs = fflop.GetInputIDs();
                         Dictionary<string, bool> inputs = new Dictionary<string, bool>();

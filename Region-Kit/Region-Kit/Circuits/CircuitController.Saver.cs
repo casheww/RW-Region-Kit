@@ -64,7 +64,7 @@ namespace RegionKit.Circuits
                     // check that we have at least the class name and the pObj entry
                     if (lSplits.Length < 2)
                     {
-                        Log($"too few fields found in {l}", true, MethodBase.GetCurrentMethod());
+                        Setup.Log($"too few fields found in {l}", true, MethodBase.GetCurrentMethod());
                         continue;
                     }
 
@@ -72,46 +72,46 @@ namespace RegionKit.Circuits
                     Type type = Assembly.GetCallingAssembly().GetType(lSplits[0]);
                     if (type == null)
                     {
-                        Log($"error parsing component type {lSplits[0]}", true, MethodBase.GetCurrentMethod());
+                        Setup.Log($"error parsing component type {lSplits[0]}", true, MethodBase.GetCurrentMethod());
                         continue;
                     }
 
                     // to get the managed field types and whatnot
-                    MObjSetup? managedSetup = Setup.GetManagedObjectSetup(lSplits[1]);
-                    if (managedSetup == null)
+                    MObjSetup? nullableManagedSetup = Setup.GetManagedObjSetupCopy(lSplits[1]);
+                    if (nullableManagedSetup == null)
                     {
-                        Log($"error parsing component managed object type {lSplits[1]}", true, MethodBase.GetCurrentMethod());
+                        Setup.Log($"error parsing component managed object type {lSplits[1]}", true, MethodBase.GetCurrentMethod());
                         continue;
                     }
 
                     // check that region code corresponds to a region loaded by the game/CRS
                     if (!game.overWorld.regions.Any(r => r.name == lSplits[2]))
                     {
-                        Log($"region {lSplits[2]} for component {lSplits[1]} is not loaded", true, MethodBase.GetCurrentMethod());
+                        Setup.Log($"region {lSplits[2]} for component {lSplits[1]} is not loaded", true, MethodBase.GetCurrentMethod());
                         continue;
                     }
 
                     int fieldOffset = 3;
+                    MObjSetup managedSetup = (MObjSetup)nullableManagedSetup;
 
                     // check that the number of fields in save matches the number of managed fields
-                    PlacedObjectsManager.ManagedField[] fields = ((MObjSetup)managedSetup).Fields;
-                    if (lSplits.Length - fieldOffset != fields.Length)
+                    if (lSplits.Length - fieldOffset != managedSetup.Fields.Length)
                     {
-                        Log($"incorrect number of fields in {l} for {lSplits[0]}", true, MethodBase.GetCurrentMethod());
+                        Setup.Log($"incorrect number of fields in {l} for {lSplits[0]}", true, MethodBase.GetCurrentMethod());
                         continue;
                     }
 
                     // parse the saved field values
-                    if (!TryParseFields(fields, lSplits, fieldOffset, out object[] fieldValues))
+                    if (!TryParseFields(managedSetup, lSplits, fieldOffset))
                     {
-                        Log($"error parsing values in {l} for {lSplits[0]}", true, MethodBase.GetCurrentMethod());
+                        Setup.Log($"error parsing values in {l} for {lSplits[0]}", true, MethodBase.GetCurrentMethod());
                         continue;
                     }
 
                     // instantiate
                     object[] args = new object[]
                     {
-                        lSplits[1], lSplits[2], fieldValues
+                        lSplits[1], lSplits[2], managedSetup
                     };
                     AbstractBaseComponent newComponent = (AbstractBaseComponent)Activator.CreateInstance(type, args);
 
@@ -135,12 +135,13 @@ namespace RegionKit.Circuits
                 return dict;
             }
 
-            static bool TryParseFields(PlacedObjectsManager.ManagedField[] fields, string[] lSplits, int fieldOffset, out object[] fieldValues)
+            static bool TryParseFields(MObjSetup managedSetup, string[] lSplits, int fieldOffset)
             {
-                fieldValues = new object[fields.Length - fieldOffset];
+                PlacedObjectsManager.ManagedField[] fields = managedSetup.Fields;
+
                 bool parseSuccess = true;
 
-                for (int i = 0; i < fieldValues.Length; i++)
+                for (int i = 0; i < fields.Length; i++)
                 {
                     var f = fields[i - fieldOffset];
 
@@ -151,7 +152,7 @@ namespace RegionKit.Circuits
                         {
                             value = Regex.Replace(str, @"\\~", @"~");
                         }
-                        fieldValues[i] = value;
+                        managedSetup.SetValue(f.key, value);
                     }
                     catch
                     {
@@ -204,10 +205,10 @@ namespace RegionKit.Circuits
                 data.Add(comp.PObjTypeStr);
                 data.Add(comp.Region);
 
-                MObjSetup? nullableMObjSetup = Setup.GetManagedObjectSetup(comp.PObjTypeStr);
+                MObjSetup? nullableMObjSetup = Setup.GetManagedObjSetupCopy(comp.PObjTypeStr);
                 if (nullableMObjSetup == null)
                 {
-                    Log($"error finding managed object setup for {comp.PObjTypeStr}", true, MethodBase.GetCurrentMethod());
+                    Setup.Log($"error finding managed object setup for {comp.PObjTypeStr}", true, MethodBase.GetCurrentMethod());
                     return "";
                 }
                 MObjSetup mObjSetup = (MObjSetup)nullableMObjSetup;

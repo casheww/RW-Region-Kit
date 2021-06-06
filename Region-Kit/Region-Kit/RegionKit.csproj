@@ -32,23 +32,24 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="BrokenPatch.cs" />
+    <Compile Include="Circuits\AbstractGenericComponent.cs" />
     <Compile Include="Circuits\CircuitController.Circuit.cs" />
     <Compile Include="Circuits\CircuitController.cs" />
     <Compile Include="Circuits\CircuitController.Saver.cs" />
-    <Compile Include="Circuits\Clock.cs" />
+    <Compile Include="Circuits\AbstractClock.cs" />
     <Compile Include="Circuits\ComponentTypes.cs" />
-    <Compile Include="Circuits\FlipFlop.cs" />
+    <Compile Include="Circuits\AbstractFlipFlop.cs" />
     <Compile Include="Circuits\ICircuitComponent.cs" />
     <Compile Include="Circuits\MObjSetup.cs" />
     <Compile Include="Circuits\RealBaseComponent.cs" />
     <Compile Include="Circuits\Setup.cs" />
-    <Compile Include="Circuits\LogicGate.cs" />
+    <Compile Include="Circuits\AbstractLogicGate.cs" />
     <Compile Include="Circuits\AbstractBaseComponent.cs" />
     <Compile Include="Circuits\BasicLight.cs" />
-    <Compile Include="Circuits\Button.cs" />
+    <Compile Include="Circuits\AbstractButton.cs" />
     <Compile Include="Circuits\MKeys.cs" />
     <Compile Include="PlacedObjectsManager.cs" />
-    <Compile Include="Circuits\Switch.cs" />
+    <Compile Include="Circuits\AbstractSwitch.cs" />
     <Compile Include="CustomArenaDivisions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PWLightRod.cs" />

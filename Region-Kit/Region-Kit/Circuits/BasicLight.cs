@@ -1,15 +1,15 @@
-﻿using UnityEngine;
-
+﻿
 namespace RegionKit.Circuits
 {
-    class BasicLight : BaseComponent
+    class BasicLight : RealBaseComponent
     {
-        public BasicLight(PlacedObject pObj, Room room) : base(pObj, room, CompType.Output)
+        public BasicLight(PlacedObject pObj, Room room) : base(pObj, room, )
         {
-            light = new LightSource(pObj.pos, false, Color.white, this);
-            room.AddObject(light);
+            //light = new LightSource(pObj.pos, false, Color.white, this);
+            //room.AddObject(light);
         }
 
+        /*
         readonly LightSource light;
 
         public override void Update(bool eu)

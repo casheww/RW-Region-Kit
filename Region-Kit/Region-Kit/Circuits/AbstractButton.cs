@@ -3,17 +3,39 @@ using UnityEngine;
 
 namespace RegionKit.Circuits
 {
-    class Switch : BaseComponent, IDrawable
+    class AbstractButton : AbstractBaseComponent
     {
-        public Switch(PlacedObject pObj, Room room) : base(pObj, room, CompType.Input, InputType.Switch) { }
+        public AbstractButton(string pObjStr, string region, MObjSetup data)
+                : base(pObjStr, region, data, CompType.Input, InputType.Button) { }
 
+        public override void Update() { }
+
+
+        /*
+        public Button(PlacedObject pObj, Room room) : base(pObj, room, CompType.Input, InputType.Button)
+        {
+            counter = counterMax;
+        }
+
+        const int counterMax = 150;
         const int activationRadius = 3;
+        int counter;
         Color? onColour = null;
 
-        public override void Update(bool eu)
+        public void Update(bool eu)
         {
-            base.Update(eu);
-            
+            if (Data.GetValue<bool>(MKeys.activated))
+            {
+                counter--;
+                if (counter < 0)
+                {
+                    Activated = false;
+                    Debug.Log($"button stopped powering {Data.GetValue<string>(MKeys.circuitID)}");
+                    counter = counterMax;
+                }
+                return;
+            }
+
             foreach (AbstractCreature aCreature in room.game.Players)
             {
                 IntVector2 coordInRoom = new IntVector2((int)pObj.pos.x / 20, (int)pObj.pos.y / 20);
@@ -21,14 +43,15 @@ namespace RegionKit.Circuits
                     Custom.MakeWorldCoordinate(coordInRoom, room.abstractRoom.index),
                     aCreature.pos);
 
-                if (Input.GetKeyDown(KeyCode.D) && dist < activationRadius)
+                if (Input.GetKey(KeyCode.D) && dist < activationRadius)
                 {
-                    Activated = !Activated;
-                    Debug.Log($"toggled power to circuit {Data.GetValue<string>(MKeys.circuitID)} {(Activated ? "on" : "off")}");
+                    Activated = true;
+                    Debug.Log($"button started powering {Data.GetValue<string>(MKeys.circuitID)}");
                 }
             }
         }
 
+        /*
         public void DrawSprites(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, float timeStacker, Vector2 camPos)
         {
             if (onColour == null)
@@ -36,26 +59,17 @@ namespace RegionKit.Circuits
                 onColour = rCam.paletteTexture.GetPixel(30, 4);
             }
 
-            // base
             sLeaser.sprites[0].x = pObj.pos.x - camPos.x;
             sLeaser.sprites[0].y = pObj.pos.y - camPos.y;
             sLeaser.sprites[0].color = rCam.currentPalette.blackColor;
             sLeaser.sprites[0].scaleX = 20;
             sLeaser.sprites[0].scaleY = 15;
 
-            // status light
             sLeaser.sprites[1].x = pObj.pos.x - camPos.x;
             sLeaser.sprites[1].y = pObj.pos.y - camPos.y;
             sLeaser.sprites[1].color = onColour != null ? (Color)onColour : rCam.currentPalette.blackColor;
             sLeaser.sprites[1].scaleX = 10;
             sLeaser.sprites[1].scaleY = 8;
-
-            // switch lever
-            sLeaser.sprites[2].x = pObj.pos.x - camPos.x;
-            sLeaser.sprites[2].y = pObj.pos.y - camPos.y;
-            sLeaser.sprites[2].color = rCam.currentPalette.blackColor + new Color(0.3f, 0.1f, 0.15f);
-            sLeaser.sprites[2].scaleX = 10;
-            sLeaser.sprites[2].scaleY = 8;
 
             sLeaser.sprites[1].isVisible = Data.GetValue<bool>(MKeys.activated);
 
@@ -70,7 +84,6 @@ namespace RegionKit.Circuits
             sLeaser.sprites = new FSprite[]
             {
                 new FSprite("pixel", true),
-                new FSprite("pixel", true),
                 new FSprite("pixel", true)
             };
 
@@ -82,17 +95,11 @@ namespace RegionKit.Circuits
             sLeaser.sprites[1].scaleX = 4;
             sLeaser.sprites[1].shader = rCam.game.rainWorld.Shaders["CustomDepth"];
 
-            sLeaser.sprites[2].anchorY = 2;
-            sLeaser.sprites[2].scaleX = 6;
-            sLeaser.sprites[2].shader = rCam.game.rainWorld.Shaders["CustomDepth"];
-
             AddToContainer(sLeaser, rCam, null);
         }
 
         public void ApplyPalette(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, RoomPalette palette)
         {
-            if (sLeaser.sprites == null) return;
-
             foreach (FSprite fsprite in sLeaser.sprites)
             {
                 fsprite.color = palette.blackColor;
@@ -110,7 +117,7 @@ namespace RegionKit.Circuits
                 fsprite.RemoveFromContainer();
                 newContatiner.AddChild(fsprite);
             }
-        }
+        }*/
 
     }
 }

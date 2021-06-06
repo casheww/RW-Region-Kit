@@ -1,6 +1,4 @@
-﻿using ManagedPlacedObjects;
-using UnityEngine;
-
+﻿
 namespace RegionKit.Circuits
 {
     public abstract class AbstractBaseComponent
@@ -37,7 +35,11 @@ namespace RegionKit.Circuits
         public InputType InType => inType;
         readonly InputType inType;
 
-        public bool Activated { get; set; }
+        public bool Activated
+        {
+            get => Data.GetValue<bool>(MKeys.activated);
+            set => Data.SetValue(MKeys.activated, value);
+        }
 
         public string CurrentCircuitID => currentCircuitID;
         readonly string currentCircuitID;
@@ -46,7 +48,7 @@ namespace RegionKit.Circuits
         public bool Realised { get; protected set; }
         public RealBaseComponent RealisedObj { get; protected set; }
 
-        public abstract void Update();
+        public virtual void Update() { }
 
         /*
         public BaseComponent(PlacedObject pObj, Room room, CompType type, InputType inType = InputType.NotAnInput)

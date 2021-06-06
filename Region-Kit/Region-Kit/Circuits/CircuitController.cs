@@ -1,8 +1,5 @@
 ﻿using ManagedPlacedObjects;
 using System.Collections.Generic;
-using System.Reflection;
-using UnityEngine;
-
 namespace RegionKit.Circuits
 {
     partial class CircuitController : World.WorldProcess
@@ -77,7 +74,7 @@ namespace RegionKit.Circuits
             }
 
             component.LastCircuitID = circuitID;
-            Log($"added component {component} to {circuitID}");
+            Setup.Log($"added component {component} to {circuitID}");
         }
 
         public bool RemoveComponent(string circuitID, AbstractBaseComponent component)
@@ -137,7 +134,7 @@ namespace RegionKit.Circuits
             {
                 component.Activated = false;
             }
-            else if (component is FlipFlop ff)
+            else if (component is AbstractFlipFlop ff)
             {
                 ff.Clear();
             }
@@ -146,18 +143,19 @@ namespace RegionKit.Circuits
         }
 
         /// <summary>
-        /// Finds an existing <see cref="AbstractBaseComponent"/> with the same settings and gives it to the realised object.
+        /// Finds an existing <see cref="AbstractBaseComponent"/> with the same settings.
         /// </summary>
         /// <returns>Whether the request was successful.</returns>
-        public bool RequestMatchingAbstractComp(RealBaseComponent real)
+        public bool RequestMatchingAbstractComp(RealBaseComponent real, out AbstractBaseComponent compOut)
         {
+            compOut = null;
             if (!circuits.TryGetValue(real.CurrentCircuitID, out Circuit c)) return false;
 
             foreach (AbstractBaseComponent abstractComp in c.AllComponents)
             {
                 if (CheckAbstractToRealDataMatch(abstractComp, real))
                 {
-                    real.AbstractComp = abstractComp;
+                    compOut = abstractComp;
                     return true;
                 }
             }
@@ -203,15 +201,6 @@ namespace RegionKit.Circuits
             }
             circuit = null;
             return false;
-        }
-
-        static void Log(object message, bool error=false, MethodBase method=null)
-        {
-            string methodStr = method == null ? "" : $"[{method.Name}]";
-            message = $"[Circuits]{methodStr} {message}";
-
-            if (!error) Debug.Log(message);
-            else Debug.LogError(message);
         }
 
     }

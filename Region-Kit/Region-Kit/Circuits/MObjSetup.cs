@@ -7,16 +7,18 @@ namespace RegionKit.Circuits
 {
     public struct MObjSetup
     {
-        public MObjSetup(string name, Type type, PlacedObjectsManager.ManagedField[] fields)
+        public MObjSetup(string name, Type abstractType, Type realisedType, PlacedObjectsManager.ManagedField[] fields)
         {
             Name = name;
-            Type = type;
+            AbstractType = abstractType;
+            RealisedType = realisedType;
             Fields = fields;
             FieldsByKey = fields.ToDictionary(f => f.key, f => f);
             ValuesByKey = fields.ToDictionary(f => f.key, f => (object)null);
         }
 
-        public bool TryGetFieldAndValue(string key, out PlacedObjectsManager.ManagedField field, out object value)
+        // temp private look for places to use GetValue where this isn't necessary
+        private bool TryGetFieldAndValue(string key, out PlacedObjectsManager.ManagedField field, out object value)
         {
             if (FieldsByKey.ContainsKey(key))
             {
@@ -32,6 +34,11 @@ namespace RegionKit.Circuits
             }
         }
 
+        public T GetValue<T>(string key)
+        {
+            return (T)ValuesByKey[key];
+        }
+
         public void SetValue(string key, object value)
         {
             if (ValuesByKey.ContainsKey(key))
@@ -41,7 +48,8 @@ namespace RegionKit.Circuits
         }
 
         public string Name { get; private set; }
-        public Type Type { get; private set; }
+        public Type AbstractType { get; private set; }
+        public Type RealisedType { get; private set; }
         public PlacedObjectsManager.ManagedField[] Fields { get; private set; }
         public Dictionary<string, PlacedObjectsManager.ManagedField> FieldsByKey { get; private set; }
         public Dictionary<string, object> ValuesByKey { get; private set; }

@@ -1,4 +1,5 @@
 ﻿using ManagedPlacedObjects;
+using System;
 
 namespace RegionKit.Circuits
 {
@@ -22,7 +23,26 @@ namespace RegionKit.Circuits
 
             _data = pObj.data as PlacedObjectsManager.ManagedData;
 
-            CircuitController.Instance.RequestMatchingAbstractComp(this);
+            bool foundMatch = CircuitController.Instance.RequestMatchingAbstractComp(this, out var abstractComp);
+            AbstractComp = abstractComp;
+
+            if (!foundMatch)
+            {
+                MObjSetup? managed = Setup.GetManagedObjSetupCopy(pObj.type.ToString());
+                if (managed == null)
+                {
+                    Setup.Log($"{this.GetType()} couldn't find matching managed object entry", true);
+                    return;
+                }
+
+                object[] args =
+                {
+                    pObj.type.ToString(),
+                    room.world.region,
+                    (MObjSetup)managed
+                };
+                AbstractComp = (AbstractBaseComponent)Activator.CreateInstance(((MObjSetup)managed).AbstractType, args);
+            }
         }
 
         public override void Update(bool eu)
@@ -56,7 +76,7 @@ namespace RegionKit.Circuits
             set => Data.SetValue(MKeys.activated, value);
         }
 
-        public string CurrentCircuitID => AbstractComp is LogicGate || AbstractComp is FlipFlop ?
+        public string CurrentCircuitID => AbstractComp is AbstractLogicGate || AbstractComp is AbstractFlipFlop ?
             Data.GetValue<string>(MKeys.output) : Data.GetValue<string>(MKeys.circuitID);
 
     }

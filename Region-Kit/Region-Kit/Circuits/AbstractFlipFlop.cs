@@ -2,11 +2,12 @@
 
 namespace RegionKit.Circuits
 {
-    class FlipFlop : BaseComponent
+    class AbstractFlipFlop : AbstractBaseComponent
     {
-        public FlipFlop(PlacedObject pObj, Room room) : base(pObj, room, CompType.Input, InputType.LogicGate)
+        public AbstractFlipFlop(string pObjStr, string region, MObjSetup data)
+                : base(pObjStr, region, data, CompType.Input, InputType.LogicGate)
         {
-            switch (pObj.type.ToString())
+            switch (data.Name)
             {
                 default:
                 case "Circuit_D_FlipFlop":
@@ -21,15 +22,15 @@ namespace RegionKit.Circuits
             }
 
             // flipflops should always start off
-            _data.SetValue(MKeys.activated, false);
+            data.SetValue(MKeys.activated, false);
 
         }
 
-        FlipFlopType type;
+        readonly FlipFlopType type;
 
-        public override void Update(bool eu)
+        public override void Update()
         {
-            base.Update(eu);
+            base.Update();
 
             if (frameDelay == 0)
             {

@@ -1,12 +1,12 @@
 ﻿
 namespace RegionKit.Circuits
 {
-    abstract class LogicGate : BaseComponent
+    abstract class AbstractLogicGate : AbstractBaseComponent
     {
-        public LogicGate(PlacedObject pObj, Room room) : base(pObj, room, CompType.Input, InputType.LogicGate)
+        public AbstractLogicGate(string pObjStr, string region, MObjSetup data)
+                : base(pObjStr, region, data, CompType.Input, InputType.LogicGate, "defaultQ")
         {
-            // logic gates should always start off
-            _data.SetValue(MKeys.activated, false);
+            Activated = false;
         }
 
         public abstract void SetInputs(bool[] inputs);
@@ -14,9 +14,9 @@ namespace RegionKit.Circuits
         public abstract string[] GetInputIDs();
     }
 
-    class LogicGate_TwoInputs : LogicGate
+    class AbstractLogicGate_2In : AbstractLogicGate
     {
-        public LogicGate_TwoInputs(PlacedObject pObj, Room room) : base(pObj, room) { }
+        public AbstractLogicGate_2In(string pObjStr, string region, MObjSetup data) : base(pObjStr, region, data) { }
 
         bool a = false; bool b = false;     // inputs
 
@@ -69,9 +69,9 @@ namespace RegionKit.Circuits
         }
     }
 
-    class LogicGate_OneInput : LogicGate
+    class AbstractLogicGate_1In : AbstractLogicGate
     {
-        public LogicGate_OneInput(PlacedObject pObj, Room room) : base(pObj, room) { }
+        public AbstractLogicGate_1In(string pObjStr, string region, MObjSetup data) : base(pObjStr, region, data) { }
 
         bool a = false;     // input
 
