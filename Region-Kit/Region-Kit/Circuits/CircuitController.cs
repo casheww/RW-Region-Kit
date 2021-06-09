@@ -45,19 +45,18 @@ namespace RegionKit.Circuits
                 circuits.Remove(id);
             }
 
-            UpdateComponentAllegiance(out bool componentsHaveChangedCircuit);
+            UpdateComponentAllegiance(out bool migrationOccured);
+            if (migrationOccured)
+                unregisteredMigrationsExist = true;
 
             // only save every {saveInterval} updates and if components have been moved around
             if (saveCounter == saveInterval)
             {
                 saveCounter = 0;
-                Setup.Log("doing save check");
-                Setup.Log(componentsHaveChangedCircuit);
-                Setup.Log(componentCountLastUpdate);
-                Setup.Log(GetTotalComponentCount());
-                if (componentsHaveChangedCircuit || componentCountLastUpdate != GetTotalComponentCount())
+                if (unregisteredMigrationsExist || componentCountLastUpdate != GetTotalComponentCount())
                 {
                     Saver.SaveComponentConfig(this, world.game);
+                    unregisteredMigrationsExist = false;
                 }
             }
             saveCounter++;
@@ -67,6 +66,7 @@ namespace RegionKit.Circuits
         int saveCounter = 0;
         const int saveInterval = 40;
         int componentCountLastUpdate = 0;
+        bool unregisteredMigrationsExist = false;
 
         int GetTotalComponentCount()
         {
@@ -139,7 +139,8 @@ namespace RegionKit.Circuits
                 }
             }
 
-            changesMade = componentsToMigrate.Count >= 1;
+            changesMade = componentsToMigrate.Count > 0;
+
             foreach (AbstractBaseComponent comp in componentsToMigrate)
             {
                 Instance.MigrateComponent(comp);
