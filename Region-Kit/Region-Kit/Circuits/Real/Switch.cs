@@ -1,22 +1,22 @@
 ﻿using RWCustom;
 using UnityEngine;
 
-namespace RegionKit.Circuits
+namespace RegionKit.Circuits.Real
 {
-    class AbstractSwitch : AbstractBaseComponent, IDrawable
+    public class Switch : RealBaseComponent
     {
-        public AbstractSwitch(PlacedObject pObj, Room room) : base(pObj, room, CompType.Input, InputType.Switch) { }
+        public Switch(PlacedObject pObj, Room room) : base(pObj, room) { }
 
         const int activationRadius = 3;
-        Color? onColour = null;
+        Color? onColor = null;
 
         public override void Update(bool eu)
         {
             base.Update(eu);
-            
+
             foreach (AbstractCreature aCreature in room.game.Players)
             {
-                IntVector2 coordInRoom = new IntVector2((int)pObj.pos.x / 20, (int)pObj.pos.y / 20);
+                IntVector2 coordInRoom = new IntVector2((int)PObj.pos.x / 20, (int)PObj.pos.y / 20);
                 float dist = Custom.WorldCoordFloatDist(
                     Custom.MakeWorldCoordinate(coordInRoom, room.abstractRoom.index),
                     aCreature.pos);
@@ -31,28 +31,28 @@ namespace RegionKit.Circuits
 
         public void DrawSprites(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, float timeStacker, Vector2 camPos)
         {
-            if (onColour == null)
+            if (onColor == null)
             {
-                onColour = rCam.paletteTexture.GetPixel(30, 4);
+                onColor = rCam.paletteTexture.GetPixel(30, 4);
             }
 
             // base
-            sLeaser.sprites[0].x = pObj.pos.x - camPos.x;
-            sLeaser.sprites[0].y = pObj.pos.y - camPos.y;
+            sLeaser.sprites[0].x = PObj.pos.x - camPos.x;
+            sLeaser.sprites[0].y = PObj.pos.y - camPos.y;
             sLeaser.sprites[0].color = rCam.currentPalette.blackColor;
             sLeaser.sprites[0].scaleX = 20;
             sLeaser.sprites[0].scaleY = 15;
 
             // status light
-            sLeaser.sprites[1].x = pObj.pos.x - camPos.x;
-            sLeaser.sprites[1].y = pObj.pos.y - camPos.y;
-            sLeaser.sprites[1].color = onColour != null ? (Color)onColour : rCam.currentPalette.blackColor;
+            sLeaser.sprites[1].x = PObj.pos.x - camPos.x;
+            sLeaser.sprites[1].y = PObj.pos.y - camPos.y;
+            sLeaser.sprites[1].color = onColor != null ? (Color)onColor : rCam.currentPalette.blackColor;
             sLeaser.sprites[1].scaleX = 10;
             sLeaser.sprites[1].scaleY = 8;
 
             // switch lever
-            sLeaser.sprites[2].x = pObj.pos.x - camPos.x;
-            sLeaser.sprites[2].y = pObj.pos.y - camPos.y;
+            sLeaser.sprites[2].x = PObj.pos.x - camPos.x;
+            sLeaser.sprites[2].y = PObj.pos.y - camPos.y;
             sLeaser.sprites[2].color = rCam.currentPalette.blackColor + new Color(0.3f, 0.1f, 0.15f);
             sLeaser.sprites[2].scaleX = 10;
             sLeaser.sprites[2].scaleY = 8;
@@ -111,6 +111,5 @@ namespace RegionKit.Circuits
                 newContatiner.AddChild(fsprite);
             }
         }
-
     }
 }

@@ -1,5 +1,8 @@
 ﻿using ManagedPlacedObjects;
+using RegionKit.Circuits.Abstract;
+using RegionKit.Circuits.Real;
 using System.Collections.Generic;
+using System.Linq;
 namespace RegionKit.Circuits
 {
     partial class CircuitController : World.WorldProcess
@@ -7,6 +10,8 @@ namespace RegionKit.Circuits
         public CircuitController(World world) : base(world)
         {
             Instance = this;
+
+            circuits = new Dictionary<string, Circuit>();
 
             Saver.LoadComponentConfig(this, world.game);
             Saver.LoadComponentStates(this, world.game);
@@ -43,16 +48,35 @@ namespace RegionKit.Circuits
             UpdateComponentAllegiance(out bool componentsHaveChangedCircuit);
 
             // only save every {saveInterval} updates and if components have been moved around
-            if (componentsHaveChangedCircuit && saveCounter == saveInterval)
+            if (saveCounter == saveInterval)
             {
-                Saver.SaveComponentConfig(this, world.game);
                 saveCounter = 0;
+                Setup.Log("doing save check");
+                Setup.Log(componentsHaveChangedCircuit);
+                Setup.Log(componentCountLastUpdate);
+                Setup.Log(GetTotalComponentCount());
+                if (componentsHaveChangedCircuit || componentCountLastUpdate != GetTotalComponentCount())
+                {
+                    Saver.SaveComponentConfig(this, world.game);
+                }
             }
             saveCounter++;
+
+            componentCountLastUpdate = GetTotalComponentCount();
         }
         int saveCounter = 0;
         const int saveInterval = 40;
+        int componentCountLastUpdate = 0;
 
+        int GetTotalComponentCount()
+        {
+            int sum = 0;
+            foreach (Circuit c in circuits.Values)
+            {
+                sum += c.AllComponents.Count;
+            }
+            return sum;
+        }
 
         #region ComponentManagement
 
@@ -92,7 +116,7 @@ namespace RegionKit.Circuits
                     break;
             }
 
-            if (success) Log($"removed component {component} from {circuitID}");
+            if (success) Setup.Log($"removed component {component} from {circuitID}");
             return success;
         }
 
@@ -146,16 +170,16 @@ namespace RegionKit.Circuits
         /// Finds an existing <see cref="AbstractBaseComponent"/> with the same settings.
         /// </summary>
         /// <returns>Whether the request was successful.</returns>
-        public bool RequestMatchingAbstractComp(RealBaseComponent real, out AbstractBaseComponent compOut)
+        public bool TryPassRealCompToAbstractComp(RealBaseComponent real)
         {
-            compOut = null;
             if (!circuits.TryGetValue(real.CurrentCircuitID, out Circuit c)) return false;
 
             foreach (AbstractBaseComponent abstractComp in c.AllComponents)
             {
                 if (CheckAbstractToRealDataMatch(abstractComp, real))
                 {
-                    compOut = abstractComp;
+                    abstractComp.Realised = true;
+                    abstractComp.RealisedObj = real;
                     return true;
                 }
             }
@@ -163,7 +187,7 @@ namespace RegionKit.Circuits
             return false;
         }
 
-        bool CheckAbstractToRealDataMatch(AbstractBaseComponent _abstract, RealBaseComponent real)
+        public bool CheckAbstractToRealDataMatch(AbstractBaseComponent _abstract, RealBaseComponent real)
         {
             if (_abstract.PObjTypeStr != real.PObj.type.ToString() && _abstract.Region != real.room.world.region.name)
             {
@@ -192,7 +216,7 @@ namespace RegionKit.Circuits
         /// Tries to get the Circuit object with the given circuit ID
         /// </summary>
         /// <returns>Whether the get was successful</returns>
-        bool TryGetCircuit(string id, out Circuit circuit)
+        public bool TryGetCircuit(string id, out Circuit circuit)
         {
             if (circuits.TryGetValue(id, out Circuit c))
             {

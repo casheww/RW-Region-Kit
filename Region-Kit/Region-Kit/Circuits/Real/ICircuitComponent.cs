@@ -1,6 +1,7 @@
 ﻿using ManagedPlacedObjects;
+using RegionKit.Circuits.Abstract;
 
-namespace RegionKit.Circuits
+namespace RegionKit.Circuits.Real
 {
     /// <summary>
     /// Interface for the physical, realised part of a component.<br/>
@@ -11,7 +12,7 @@ namespace RegionKit.Circuits
     /// If you are still here, it's highly recommended that you use <see cref="RealBaseComponent"/> as a guide.
     /// Heed its class summary.
     /// </summary>
-    interface ICircuitComponent
+    public interface ICircuitComponent
     {
         /// <summary>
         /// The <see cref="PlacedObject"/> corresponding to our object. 
@@ -23,11 +24,6 @@ namespace RegionKit.Circuits
         /// Managed data from henpemaz's glorious framework - <seealso cref="ManagedPlacedObjects"/>.
         /// </summary>
         PlacedObjectsManager.ManagedData Data { get; }
-
-        /// <summary>
-        /// The <see cref="AbstractBaseComponent"/> that handles the component logic.
-        /// </summary>
-        AbstractBaseComponent AbstractComp { get; set; }
 
         /// <summary>
         /// * Take a look at <see cref="RealBaseComponent.Update(bool)"/> and <see cref="RealBaseComponent.Activated"/>

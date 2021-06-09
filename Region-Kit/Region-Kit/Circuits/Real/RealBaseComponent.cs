@@ -1,7 +1,9 @@
 ﻿using ManagedPlacedObjects;
+using RegionKit.Circuits.Abstract;
 using System;
+using System.Text.RegularExpressions;
 
-namespace RegionKit.Circuits
+namespace RegionKit.Circuits.Real
 {
     /// <summary>
     /// Base class for the physical, realised part of a component.
@@ -20,42 +22,38 @@ namespace RegionKit.Circuits
         {
             _pObj = pObj;
             this.room = room;
-
             _data = pObj.data as PlacedObjectsManager.ManagedData;
 
-            bool foundMatch = CircuitController.Instance.RequestMatchingAbstractComp(this, out var abstractComp);
-            AbstractComp = abstractComp;
+            bool foundMatch = CircuitController.Instance.TryPassRealCompToAbstractComp(this);
 
+            // if a matching abstract component isn't found, we need to generate a new one
             if (!foundMatch)
             {
+                // first, we get a copy of the managed object setup stuff 
                 MObjSetup? managed = Setup.GetManagedObjSetupCopy(pObj.type.ToString());
                 if (managed == null)
                 {
-                    Setup.Log($"{this.GetType()} couldn't find matching managed object entry", true);
+                    Setup.Log($"{GetType()} couldn't find matching managed object entry", true);
                     return;
                 }
 
+                // then we use that setup struct and some other data to make an array of args for the ctor
                 object[] args =
                 {
                     pObj.type.ToString(),
-                    room.world.region,
+                    room.world.region.name,
                     (MObjSetup)managed
                 };
-                AbstractComp = (AbstractBaseComponent)Activator.CreateInstance(((MObjSetup)managed).AbstractType, args);
+
+                // then we instantiate the abstract component ...
+                AbstractBaseComponent comp = (AbstractBaseComponent)Activator.CreateInstance(((MObjSetup)managed).AbstractType, args);
+                CircuitController.Instance.AddComponent(CurrentCircuitID, comp);
+
+                // ... and pass `this` to it so that it can see any changing settings on the realised object
+                comp.Realised = true;
+                comp.RealisedObj = this;
             }
         }
-
-        public override void Update(bool eu)
-        {
-            base.Update(eu);
-
-            if (activatedLastUpdate != AbstractComp.Activated)
-            {
-                Activated = AbstractComp.Activated;
-                activatedLastUpdate = AbstractComp.Activated;
-            }
-        }
-        protected bool activatedLastUpdate = false;
 
         public PlacedObject PObj => _pObj;
         private readonly PlacedObject _pObj;
@@ -63,21 +61,13 @@ namespace RegionKit.Circuits
         public PlacedObjectsManager.ManagedData Data => _data;
         private readonly PlacedObjectsManager.ManagedData _data;
 
-        public AbstractBaseComponent AbstractComp { get; set; }
-
-        /// <summary>
-        /// Updated by <see cref="Update(bool)"/> when <see cref="AbstractComp"/>.Activated has changed.<br/>
-        /// If overriding, ensure that the base getter/setter is called 
-        /// to update the activity in the managed data.
-        /// </summary>
         public virtual bool Activated
         {
             get => Data.GetValue<bool>(MKeys.activated);
             set => Data.SetValue(MKeys.activated, value);
         }
 
-        public string CurrentCircuitID => AbstractComp is AbstractLogicGate || AbstractComp is AbstractFlipFlop ?
-            Data.GetValue<string>(MKeys.output) : Data.GetValue<string>(MKeys.circuitID);
+        public string CurrentCircuitID => Data.GetValue<string>(MKeys.circuitID);
 
     }
 }

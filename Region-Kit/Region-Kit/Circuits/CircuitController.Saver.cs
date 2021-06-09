@@ -1,4 +1,5 @@
 ﻿using ManagedPlacedObjects;
+using RegionKit.Circuits.Abstract;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -17,15 +18,19 @@ namespace RegionKit.Circuits
 
             public static void LoadComponentConfig(CircuitController cController, RainWorldGame game)
             {
+                Setup.Log("loading component configs");
+
                 if (!Directory.Exists(savesDir))
                 {
                     Directory.CreateDirectory(savesDir);
+                    Setup.Log("no file to load from");
                     return;     // nothing to load
                 }
 
                 if (game.IsArenaSession) return;        // skipping arena compat for now TODO
 
-                foreach (string fp in Directory.GetFiles(savesDir))
+                string[] fps = Directory.GetFiles(savesDir);
+                foreach (string fp in fps)
                 {
                     string[] raw = File.ReadAllLines(fp);
                     Dictionary<string, Circuit> regionCircuits = DeserialiseComponentConfig(game, raw);
@@ -38,6 +43,7 @@ namespace RegionKit.Circuits
                         }
                     }
                 }
+                Setup.Log($"loaded from {fps.Length} files");
 
             }
 
@@ -167,6 +173,8 @@ namespace RegionKit.Circuits
 
             public static void SaveComponentConfig(CircuitController cController, RainWorldGame game)
             {
+                Setup.Log("saving component configs");
+
                 if (game.IsArenaSession) return; // TODO ? arena support
 
                 if (!Directory.Exists(savesDir)) Directory.CreateDirectory(savesDir);
@@ -195,6 +203,8 @@ namespace RegionKit.Circuits
 
                     File.WriteAllLines(Path.Combine(savesDir, pair.Key + ".txt"), saveData);
                 }
+
+                Setup.Log($"saved to {compByRegionName.Count} files");
             }
 
             public static string SerialiseComponentConfig(AbstractBaseComponent comp)

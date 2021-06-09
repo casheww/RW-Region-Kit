@@ -1,7 +1,6 @@
-﻿
-namespace RegionKit.Circuits
+﻿namespace RegionKit.Circuits.Abstract
 {
-    abstract class AbstractLogicGate : AbstractBaseComponent
+    public abstract class AbstractLogicGate : AbstractBaseComponent
     {
         public AbstractLogicGate(string pObjStr, string region, MObjSetup data)
                 : base(pObjStr, region, data, CompType.Input, InputType.LogicGate, "defaultQ")
@@ -14,7 +13,7 @@ namespace RegionKit.Circuits
         public abstract string[] GetInputIDs();
     }
 
-    class AbstractLogicGate_2In : AbstractLogicGate
+    public class AbstractLogicGate_2In : AbstractLogicGate
     {
         public AbstractLogicGate_2In(string pObjStr, string region, MObjSetup data) : base(pObjStr, region, data) { }
 
@@ -69,7 +68,7 @@ namespace RegionKit.Circuits
         }
     }
 
-    class AbstractLogicGate_1In : AbstractLogicGate
+    public class AbstractLogicGate_1In : AbstractLogicGate
     {
         public AbstractLogicGate_1In(string pObjStr, string region, MObjSetup data) : base(pObjStr, region, data) { }
 

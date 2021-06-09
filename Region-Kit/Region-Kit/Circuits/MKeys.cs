@@ -28,7 +28,6 @@ namespace RegionKit.Circuits
         public const string inputA = "l_inputA";
         public const string inputB = "l_inputB";
         public const string inputClock = "l_inputC";
-        public const string output = "l_output";
         public const string flipFlop = "ff_type";
 
         // clock

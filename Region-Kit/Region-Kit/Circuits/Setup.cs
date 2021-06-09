@@ -1,12 +1,19 @@
 ﻿using ManagedPlacedObjects;
+using RegionKit.Circuits.Abstract;
+using RegionKit.Circuits.Real;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
 
+/* Circuits 
+ * ... is a framework for custom PlacedObjects that can be used as components in logic circuits.
+ * Author: casheww
+ */
+
 namespace RegionKit.Circuits
 {
-    static class Setup
+    public static class Setup
     {
         public static void Apply()
         {
@@ -57,7 +64,7 @@ namespace RegionKit.Circuits
                 new PlacedObjectsManager.IntegerField(MKeys.blue, 0, 255, 200,
                         PlacedObjectsManager.ManagedFieldWithPanel.ControlType.slider, "Blue")
             });
-            RegisterComponent("Light", typeof(AbstractGenericComponent), typeof(BasicLight), fields.ToArray());
+            RegisterComponent("Light", typeof(AbstractGenericOutput), typeof(BasicLight), fields.ToArray());
 
             // logic gates with 2 inputs
             fields = new List<PlacedObjectsManager.ManagedField>()
@@ -66,7 +73,7 @@ namespace RegionKit.Circuits
                 new PlacedObjectsManager.StringField(MKeys.inputB, "defaultB", "Input B"),
                 new PlacedObjectsManager.EnumField(MKeys.logicOp, typeof(AbstractLogicGate_2In.Op), AbstractLogicGate_2In.Op.AND,
                         control: PlacedObjectsManager.ManagedFieldWithPanel.ControlType.arrows, displayName: "Operator"),
-                new PlacedObjectsManager.StringField(MKeys.output, "defaultOUT", "Output"),
+                new PlacedObjectsManager.StringField(MKeys.circuitID, "defaultOUT", "Output"),
                 new ComponentActivityField(MKeys.activated, false)
             };
             RegisterComponent("LogicGate_2", typeof(AbstractLogicGate_2In), typeof(RealBaseComponent), fields.ToArray());
@@ -77,7 +84,7 @@ namespace RegionKit.Circuits
                 new PlacedObjectsManager.StringField(MKeys.inputA, "default", "Input"),
                 new PlacedObjectsManager.EnumField(MKeys.logicOp, typeof(AbstractLogicGate_1In.Op), AbstractLogicGate_1In.Op.NOT,
                         control: PlacedObjectsManager.ManagedFieldWithPanel.ControlType.arrows, displayName: "Operator"),
-                new PlacedObjectsManager.StringField(MKeys.output, "defaultOUT", "Output"),
+                new PlacedObjectsManager.StringField(MKeys.circuitID, "defaultOUT", "Output"),
                 new ComponentActivityField(MKeys.activated, false)
             };
             RegisterComponent("LogicGate_1", typeof(AbstractLogicGate_1In), typeof(RealBaseComponent), fields.ToArray());
@@ -99,7 +106,7 @@ namespace RegionKit.Circuits
             {
                 new PlacedObjectsManager.StringField(MKeys.inputA, "defaultD", "D"),
                 new PlacedObjectsManager.StringField(MKeys.inputClock, "clock", "Clock"),
-                new PlacedObjectsManager.StringField(MKeys.output, "defaultQ", "Q"),
+                new PlacedObjectsManager.StringField(MKeys.circuitID, "defaultQ", "Q"),
             };
             RegisterComponent("D_FlipFlop", typeof(AbstractFlipFlop), typeof(RealBaseComponent), fields.ToArray());
 
@@ -170,7 +177,7 @@ namespace RegionKit.Circuits
         /// A Managed bool field for henpemaz's framework that has no representation.
         /// Designed to store component activity for <see cref="IAbstractCircuitComponent.Activated"/>.
         /// </summary>
-        private class ComponentActivityField : PlacedObjectsManager.BooleanField
+        public class ComponentActivityField : PlacedObjectsManager.BooleanField
         {
             public ComponentActivityField(string key, bool defaultValue) : base(key, defaultValue) { }
 

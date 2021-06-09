@@ -1,15 +1,15 @@
-﻿
-namespace RegionKit.Circuits
+﻿using UnityEngine;
+
+namespace RegionKit.Circuits.Real
 {
-    class BasicLight : RealBaseComponent
+    public class BasicLight : RealBaseComponent
     {
-        public BasicLight(PlacedObject pObj, Room room) : base(pObj, room, )
+        public BasicLight(PlacedObject pObj, Room room) : base(pObj, room)
         {
-            //light = new LightSource(pObj.pos, false, Color.white, this);
-            //room.AddObject(light);
+            light = new LightSource(pObj.pos, false, Color.white, this);
+            room.AddObject(light);
         }
 
-        /*
         readonly LightSource light;
 
         public override void Update(bool eu)
@@ -22,7 +22,7 @@ namespace RegionKit.Circuits
 
             light.setRad = Data.GetValue<float>(MKeys.strength) * maxStrengthTileCount * 20;
 
-            light.setPos = pObj.pos;
+            light.setPos = PObj.pos;
             base.Update(eu);
         }
 
@@ -69,7 +69,7 @@ namespace RegionKit.Circuits
                     break;
 
                 case LightState.TurningOn:
-                    _alpha *= Mathf.Sin((Mathf.PI / (2 * stateFrames)) * (flickerCounter - 1));
+                    _alpha *= Mathf.Sin(Mathf.PI / (2 * stateFrames) * (flickerCounter - 1));
                     break;
             }
 

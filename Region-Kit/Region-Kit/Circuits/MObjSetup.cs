@@ -14,11 +14,10 @@ namespace RegionKit.Circuits
             RealisedType = realisedType;
             Fields = fields;
             FieldsByKey = fields.ToDictionary(f => f.key, f => f);
-            ValuesByKey = fields.ToDictionary(f => f.key, f => (object)null);
+            ValuesByKey = fields.ToDictionary(f => f.key, f => f.DefaultValue);
         }
 
-        // temp private look for places to use GetValue where this isn't necessary
-        private bool TryGetFieldAndValue(string key, out PlacedObjectsManager.ManagedField field, out object value)
+        public bool TryGetFieldAndValue(string key, out PlacedObjectsManager.ManagedField field, out object value)
         {
             if (FieldsByKey.ContainsKey(key))
             {

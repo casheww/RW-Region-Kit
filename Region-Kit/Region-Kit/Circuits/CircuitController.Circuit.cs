@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using RegionKit.Circuits.Abstract;
+using System.Collections.Generic;
 
 namespace RegionKit.Circuits
 {
@@ -59,6 +60,7 @@ namespace RegionKit.Circuits
 
                 foreach (AbstractBaseComponent comp in outputComponents)
                 {
+                    Setup.Log(comp);
                     comp.Activated = HasPower;
                 }
                 hadPowerLastUpdate = HasPower;

@@ -1,18 +1,11 @@
 ﻿using RWCustom;
 using UnityEngine;
 
-namespace RegionKit.Circuits
+namespace RegionKit.Circuits.Real
 {
-    class AbstractButton : AbstractBaseComponent
+    public class Button : RealBaseComponent, IDrawable
     {
-        public AbstractButton(string pObjStr, string region, MObjSetup data)
-                : base(pObjStr, region, data, CompType.Input, InputType.Button) { }
-
-        public override void Update() { }
-
-
-        /*
-        public Button(PlacedObject pObj, Room room) : base(pObj, room, CompType.Input, InputType.Button)
+        public Button(PlacedObject pObj, Room room) : base(pObj, room)
         {
             counter = counterMax;
         }
@@ -22,7 +15,7 @@ namespace RegionKit.Circuits
         int counter;
         Color? onColour = null;
 
-        public void Update(bool eu)
+        public override void Update(bool eu)
         {
             if (Data.GetValue<bool>(MKeys.activated))
             {
@@ -38,7 +31,7 @@ namespace RegionKit.Circuits
 
             foreach (AbstractCreature aCreature in room.game.Players)
             {
-                IntVector2 coordInRoom = new IntVector2((int)pObj.pos.x / 20, (int)pObj.pos.y / 20);
+                IntVector2 coordInRoom = new IntVector2((int)PObj.pos.x / 20, (int)PObj.pos.y / 20);
                 float dist = Custom.WorldCoordFloatDist(
                     Custom.MakeWorldCoordinate(coordInRoom, room.abstractRoom.index),
                     aCreature.pos);
@@ -51,7 +44,6 @@ namespace RegionKit.Circuits
             }
         }
 
-        /*
         public void DrawSprites(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, float timeStacker, Vector2 camPos)
         {
             if (onColour == null)
@@ -59,14 +51,14 @@ namespace RegionKit.Circuits
                 onColour = rCam.paletteTexture.GetPixel(30, 4);
             }
 
-            sLeaser.sprites[0].x = pObj.pos.x - camPos.x;
-            sLeaser.sprites[0].y = pObj.pos.y - camPos.y;
+            sLeaser.sprites[0].x = PObj.pos.x - camPos.x;
+            sLeaser.sprites[0].y = PObj.pos.y - camPos.y;
             sLeaser.sprites[0].color = rCam.currentPalette.blackColor;
             sLeaser.sprites[0].scaleX = 20;
             sLeaser.sprites[0].scaleY = 15;
 
-            sLeaser.sprites[1].x = pObj.pos.x - camPos.x;
-            sLeaser.sprites[1].y = pObj.pos.y - camPos.y;
+            sLeaser.sprites[1].x = PObj.pos.x - camPos.x;
+            sLeaser.sprites[1].y = PObj.pos.y - camPos.y;
             sLeaser.sprites[1].color = onColour != null ? (Color)onColour : rCam.currentPalette.blackColor;
             sLeaser.sprites[1].scaleX = 10;
             sLeaser.sprites[1].scaleY = 8;
@@ -117,7 +109,6 @@ namespace RegionKit.Circuits
                 fsprite.RemoveFromContainer();
                 newContatiner.AddChild(fsprite);
             }
-        }*/
-
+        }
     }
 }
